@@ -37,7 +37,7 @@ GAS + HTML に移植したバージョンです。
 
 ### 1. Supabase
 
-`records` 取引先テーブルを作成し、以下の列を用意します。
+`records` テーブルを作成し、以下の列を用意します。
 > ⚠️ 以下はサンプルです。実際の列名・取引先名は各自の運用に合わせて変更してください。
 ```
 
@@ -60,6 +60,23 @@ GAS + HTML に移植したバージョンです。
 | `SESSION_SECRET` | 任意のランダム文字列 |
 
 4. デプロイ → ウェブアプリとして公開（アクセス：全員）
+
+## スクリーンショット
+
+### 1. ログイン
+<img width="1332" height="1045" alt="ログイン" src="https://github.com/user-attachments/assets/4a6ff2ed-b4ff-4428-9f10-5aa535257e8d" />
+
+### 2. 入力タブ
+<img width="1356" height="1058" alt="入力タブ" src="https://github.com/user-attachments/assets/e901011b-c5ca-44b9-afd2-0c68bf09b2c6" />
+
+### 3. データタブ
+<img width="1336" height="1045" alt="データタブ" src="https://github.com/user-attachments/assets/cf613737-bb9c-4053-98a9-e24f9641c098" />
+
+### 4. インポートタブ
+<img width="1350" height="678" alt="インポートタブ" src="https://github.com/user-attachments/assets/ca615fe5-ebae-4fe6-a841-1295d4943a84" />
+
+### 5. レポートタブ
+<img width="1347" height="661" alt="レポートタブ" src="https://github.com/user-attachments/assets/8d28e4d0-db12-47f8-812e-48d1b1810f70" />
 
 ## 関連リポジトリ
 
