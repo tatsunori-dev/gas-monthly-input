@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TEMC 管理</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+  :root {
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3348;
+    --accent:#5b8af0; --accent2:#7c6af5; --green:#34c77b; --red:#f05b5b;
+    --yellow:#f0c05b; --text:#e2e6f3; --text2:#8892b0; --text3:#4a5568;
+    --mono:'JetBrains Mono',monospace; --sans:'Noto Sans JP',sans-serif;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:60px;}
+
+  /* ── ヘッダー ── */
+  .app-header{background:linear-gradient(135deg,#1a1d27,#141828);border-bottom:1px solid var(--border);
+    padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;}
+  .app-title{font-size:1.05rem;font-weight:700;letter-spacing:.04em;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .unread-badges{display:flex;gap:8px;align-items:center;}
+  .badge{background:var(--red);color:#fff;border-radius:12px;padding:2px 8px;font-size:.72rem;font-weight:700;}
+  .btn-logout{background:none;border:1px solid var(--border);color:var(--text2);padding:4px 12px;
+    border-radius:6px;cursor:pointer;font-size:.78rem;}
+  .btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+  /* ── タブ（2列グリッド） ── */
+  .tab-bar{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);
+    background:var(--surface);}
+  .tab-btn{background:none;border:none;border-bottom:1px solid var(--border);
+    color:var(--text2);padding:11px 14px;cursor:pointer;font-size:.86rem;
+    font-family:var(--sans);transition:all .2s;text-align:left;}
+  .tab-btn:nth-child(even){border-left:1px solid var(--border);}
+  .tab-btn:hover:not(.active){background:var(--surface2);}
+  .tab-btn.active{color:var(--accent);background:rgba(91,138,240,.08);}
+
+  /* ── コンテンツ ── */
+  .tab-panel{display:none;padding:16px;max-width:900px;margin:0 auto;}
+  .tab-panel.active{display:block;}
+
+  /* ── カード ── */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;margin-bottom:12px;}
+  .card-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:12px;}
+
+  /* ── アコーディオン ── */
+  .accordion{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    margin-bottom:8px;overflow:hidden;}
+  .accordion.unread{border-color:var(--red);}
+  .acc-header{padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;
+    justify-content:space-between;}
+  .acc-header:hover{background:var(--surface2);}
+  .acc-title{font-size:.88rem;font-weight:600;flex:1;}
+  .acc-arrow{color:var(--text3);transition:transform .2s;font-size:.8rem;}
+  .accordion.open .acc-arrow{transform:rotate(180deg);}
+  .acc-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);}
+  .accordion.open .acc-body{display:block;}
+
+  /* ── フィールド ── */
+  .field-row{display:flex;gap:6px;align-items:baseline;margin-bottom:6px;font-size:.85rem;}
+  .field-label{color:var(--text2);min-width:90px;font-size:.8rem;}
+  .field-val{color:var(--text);}
+  .field-empty{background:rgba(240,192,91,.15);border-radius:4px;padding:1px 6px;
+    color:var(--yellow);font-size:.78rem;}
+
+  /* ── 2カラム ── */
+  .cols-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.cols-2{grid-template-columns:1fr;}}
+
+  /* ── メトリクス ── */
+  .metric{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;margin-bottom:8px;}
+  .metric-label{font-size:.72rem;color:var(--text2);margin-bottom:4px;}
+  .metric-val{font-family:var(--mono);font-size:1.1rem;color:var(--green);font-weight:600;}
+
+  /* ── ステータスボタン ── */
+  .status-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+  /* ── ボタン ── */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;
+    border:none;cursor:pointer;font-family:var(--sans);font-size:.85rem;font-weight:600;
+    transition:all .2s;}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+  .btn-primary:hover{opacity:.88;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-sm{padding:5px 12px;font-size:.78rem;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ── アラート ── */
+  .alert{padding:10px 14px;border-radius:8px;font-size:.85rem;margin-bottom:10px;
+    display:flex;align-items:flex-start;gap:8px;}
+  .alert-warn{background:rgba(240,192,91,.12);border:1px solid rgba(240,192,91,.35);color:var(--yellow);}
+  .alert-success{background:rgba(52,199,123,.12);border:1px solid rgba(52,199,123,.35);color:var(--green);}
+  .alert-error{background:rgba(240,91,91,.12);border:1px solid rgba(240,91,91,.35);color:var(--red);}
+  .alert-info{background:rgba(91,138,240,.1);border:1px solid rgba(91,138,240,.3);color:var(--accent);}
+
+  /* ── フォーム ── */
+  label{font-size:.8rem;color:var(--text2);display:block;margin-bottom:4px;}
+  input[type=text],input[type=tel],input[type=email],input[type=number],
+  input[type=password],input[type=datetime-local],textarea,select{
+    width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+    border-radius:7px;padding:8px 12px;font-family:var(--sans);font-size:.88rem;
+    -webkit-appearance:none;}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);}
+  textarea{resize:vertical;min-height:60px;}
+  .form-group{margin-bottom:12px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:560px){.form-row{grid-template-columns:1fr;}}
+
+  /* ── テンプレート ── */
+  .template-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:12px;font-size:.8rem;white-space:pre-wrap;color:var(--text2);margin-bottom:8px;
+    max-height:150px;overflow-y:auto;}
+  .tel-link{display:inline-block;background:var(--red);color:#fff;padding:7px 18px;
+    border-radius:7px;text-decoration:none;font-weight:700;font-size:.88rem;margin-top:6px;}
+
+  /* ── ローディング ── */
+  .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;z-index:999;}
+  .loading-box{background:var(--surface);border:1px solid var(--border);padding:20px 28px;
+    border-radius:12px;display:flex;align-items:center;gap:12px;color:var(--text2);}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ── ログイン ── */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 0%,#1a2040,var(--bg) 70%);}
+  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:32px;width:100%;max-width:360px;}
+  .login-title{font-size:1.3rem;font-weight:700;margin-bottom:4px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .login-sub{font-size:.8rem;color:var(--text3);margin-bottom:24px;}
+
+  /* ── ソート選択 ── */
+  .sort-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .sort-row select{width:auto;min-width:200px;}
+
+  /* ── 料金内訳 ── */
+  .price-detail{font-size:.78rem;color:var(--text2);margin-top:4px;}
+
+  /* ── セクション区切り ── */
+  .section-sep{border:none;border-top:1px solid var(--border);margin:12px 0;}
+
+  /* ── 領収書モーダル ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);
+    display:flex;align-items:center;justify-content:center;z-index:998;padding:16px;}
+  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:24px;width:100%;max-width:400px;}
+  .modal-title{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:6px;}
+  .modal-sub{font-size:.78rem;color:var(--text2);margin-bottom:16px;}
+  .modal-field{margin-bottom:10px;}
+  .modal-label{font-size:.75rem;color:var(--text2);display:block;margin-bottom:4px;}
+</style>
+</head>
+<body>
+
+<!-- ── ログイン画面 ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-title">🚚 TEMC 管理</div>
+    <div class="login-sub">ログインして続行</div>
+    <div class="form-group">
+      <label>ユーザー名</label>
+      <input type="text" id="login-user" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>パスワード</label>
+      <input type="password" id="login-pass" autocomplete="current-password">
+    </div>
+    <div id="login-err" class="alert alert-error" style="display:none"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">ログイン</button>
+  </div>
+</div>
+
+<!-- ── メイン画面 ── -->
+<div id="main-screen" style="display:none">
+  <header class="app-header">
+    <div class="app-title">🚚 TEMC 管理</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="unread-badges" id="unread-badges"></div>
+      <button class="btn-logout" onclick="doLogout()">ログアウト</button>
+    </div>
+  </header>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('manual')">✏️ 手動入力</button>
+    <button class="tab-btn" onclick="switchTab('delivery')">🚚 配送依頼</button>
+    <button class="tab-btn" onclick="switchTab('other')">📦 他業務管理</button>
+    <button class="tab-btn" onclick="switchTab('inquiry')">📩 問い合わせ</button>
+    <button class="tab-btn" onclick="switchTab('line')">🍰 しょんぴぃ受付</button>
+    <button class="tab-btn" onclick="switchTab('board')">📋 業務ボード</button>
+    <button class="tab-btn" onclick="switchTab('banner')" style="grid-column:1/-1;">📣 お知らせバナー</button>
+  </nav>
+
+  <!-- ═══ 配送依頼 ═══ -->
+  <div id="tab-delivery" class="tab-panel">
+    <div class="sort-row">
+      <label style="margin:0;color:var(--text2);font-size:.82rem;">並び替え</label>
+      <select id="delivery-sort" onchange="renderDeliveries()">
+        <option value="default">配達日が近い順（未読優先）</option>
+        <option value="new">新しい順</option>
+        <option value="old">古い順</option>
+        <option value="unread">未読順</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="loadDeliveries()">🔄 再読込</button>
+    </div>
+    <div id="delivery-list"></div>
+  </div>
+
+  <!-- ═══ 問い合わせ ═══ -->
+  <div id="tab-inquiry" class="tab-panel">
+    <div class="sort-row">
+      <label style="margin:0;color:var(--text2);font-size:.82rem;">並び替え</label>
+      <select id="inquiry-sort" onchange="renderInquiries()">
+        <option value="default">デフォルト（未読→未返信→完了）</option>
+        <option value="new">新しい順</option>
+        <option value="old">古い順</option>
+        <option value="unread">未読順</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="loadInquiries()">🔄 再読込</button>
+      <button class="btn btn-secondary btn-sm" id="archive-toggle-btn" onclick="toggleArchiveView()">📦 アーカイブ一覧</button>
+    </div>
+    <div id="inquiry-list"></div>
+    <div id="archived-inquiry-list" style="display:none;"></div>
+  </div>
+
+  <!-- ═══ 業務ボード ═══ -->
+  <div id="tab-board" class="tab-panel">
+    <button class="btn btn-secondary btn-sm" onclick="loadConfirmed()" style="margin-bottom:12px">🔄 再読込</button>
+    <div id="board-list"></div>
+  </div>
+
+  <!-- ═══ お知らせバナー ═══ -->
+  <div id="tab-banner" class="tab-panel">
+    <div class="card">
+      <div class="card-title">HP お知らせバナー管理</div>
+      <p style="font-size:.83rem;color:var(--text2);margin-bottom:16px;">
+        ONにするとHPの全ページ最上部にバナーが表示されます。空き便・帰り便募集など一時的なお知らせに使用してください。
+      </p>
+
+      <!-- 帰り便テンプレ入力フォーム -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:10px;font-weight:600;">📦 帰り便テンプレ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:3px;">日付</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <select id="kb-month" onchange="updateKaeribi()" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px;font-size:.85rem;"><option value="">月</option></select>
+              <span style="color:var(--text2);">/</span>
+              <select id="kb-day" onchange="updateKaeribi()" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px;font-size:.85rem;"><option value="">日</option></select>
+              <span id="kb-youbi" style="font-size:.82rem;color:var(--green);min-width:24px;margin-left:2px;"></span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:3px;">時間</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <select id="kb-hour" onchange="updateKaeribi()" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px;font-size:.85rem;"><option value="">時</option></select>
+              <span style="color:var(--text2);font-size:.85rem;">頃</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:3px;">エリア</label>
+          <select id="kb-area-sel" onchange="onKbAreaChange()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 8px;font-size:.88rem;">
+            <option value="">選択してください</option>
+            <optgroup label="近郊エリア"><option value="江別">江別</option><option value="北広島">北広島</option><option value="恵庭">恵庭</option><option value="石狩">石狩</option><option value="千歳">千歳</option><option value="小樽">小樽</option></optgroup>
+            <optgroup label="遠方エリア"><option value="旭川">旭川</option><option value="函館">函館</option><option value="帯広">帯広</option><option value="釧路">釧路</option></optgroup>
+            <option value="other">その他（自由入力）</option>
+          </select>
+          <input id="kb-area-text" type="text" placeholder="エリア名を入力" oninput="updateKaeribi()" style="display:none;width:100%;margin-top:6px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 8px;font-size:.88rem;">
+        </div>
+        <div id="kb-preview" style="font-size:.75rem;color:var(--text2);background:var(--surface);border-radius:4px;padding:8px;margin-bottom:10px;line-height:1.5;min-height:36px;"></div>
+        <button class="btn btn-secondary btn-sm" onclick="applyKaeriBinBanner()" style="background:var(--surface);border-color:var(--border);color:var(--text);font-size:.8rem;width:100%;">バナー文言に反映 ↓</button>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:6px;">バナー文言</label>
+        <textarea id="bannerText" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:10px;font-family:var(--sans);font-size:.9rem;resize:vertical;" placeholder="例）3/25（火）15時頃 旭川→札幌の帰り便あり。割引受付中。お問い合わせはLINEまたはフォームから。"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="setBanner(true)">📣 表示ON</button>
+        <button class="btn btn-secondary btn-sm" onclick="setBanner(false)" style="background:var(--surface2);border-color:var(--border);color:var(--text2);">⛔ 表示OFF</button>
+        <button class="btn btn-secondary btn-sm" onclick="initBannerTab()" style="background:none;border-color:var(--border);color:var(--text2);">🔄 現在の状態を確認</button>
+      </div>
+
+      <div id="banner-status" style="margin-top:14px;font-size:.83rem;"></div>
+    </div>
+
+    <!-- 帰り便速報 LINE一斉送信 -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">📩 帰り便速報 LINE一斉送信</div>
+
+      <!-- 入力フォーム -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="margin-bottom:8px;">
+          <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:3px;">出発エリア</label>
+          <select id="lb-from-sel" onchange="onLbFromChange()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 8px;font-size:.85rem;">
+            <option value="">選択</option>
+            <optgroup label="近郊エリア"><option value="江別">江別</option><option value="北広島">北広島</option><option value="恵庭">恵庭</option><option value="石狩">石狩</option><option value="千歳">千歳</option><option value="小樽">小樽</option></optgroup>
+            <optgroup label="遠方エリア"><option value="旭川">旭川</option><option value="函館">函館</option><option value="帯広">帯広</option><option value="釧路">釧路</option></optgroup>
+            <option value="other">その他</option>
+          </select>
+          <input id="lb-from-text" type="text" placeholder="エリア名" oninput="updateLineBc()" style="display:none;width:100%;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 8px;font-size:.85rem;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:3px;">日付（日時明記版）</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <select id="lb-month" onchange="updateLineBc()" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px;font-size:.85rem;"><option value="">月</option></select>
+              <span style="color:var(--text2);font-size:.85rem;">/</span>
+              <select id="lb-day" onchange="updateLineBc()" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px;font-size:.85rem;"><option value="">日</option></select>
+              <span id="lb-youbi" style="font-size:.82rem;color:var(--green);min-width:24px;"></span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--text2);display:block;margin-bottom:3px;">時間（日時明記版）</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <select id="lb-hour" onchange="updateLineBc()" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px;font-size:.85rem;"><option value="">時</option></select>
+              <span style="color:var(--text2);font-size:.85rem;">以降</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- テンプレ切替 -->
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button id="lb-btn-simple" class="btn btn-secondary btn-sm" onclick="selectLineBcType('simple')" style="flex:1;font-size:.8rem;border-color:var(--green);color:var(--green);">シンプル版</button>
+          <button id="lb-btn-detail" class="btn btn-secondary btn-sm" onclick="selectLineBcType('detail')" style="flex:1;font-size:.8rem;background:var(--surface);border-color:var(--border);color:var(--text2);">日時明記版</button>
+        </div>
+
+        <!-- プレビュー -->
+        <div style="font-size:.75rem;color:var(--text2);margin-bottom:4px;">プレビュー（編集可）</div>
+        <textarea id="line-bc-message" rows="7" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:8px;font-family:var(--sans);font-size:.85rem;resize:vertical;"></textarea>
+      </div>
+
+      <div id="line-bc-status" style="font-size:.83rem;margin-bottom:10px;"></div>
+      <button class="btn btn-primary btn-sm" onclick="broadcastLine()">📩 LINE一斉送信</button>
+    </div>
+  </div>
+
+  <!-- ═══ LINE受付 ═══ -->
+  <div id="tab-line" class="tab-panel">
+    <button class="btn btn-secondary btn-sm" onclick="loadMessages()" style="margin-bottom:12px">🔄 再読込</button>
+    <div id="line-list"></div>
+  </div>
+
+  <!-- ═══ 他業務管理 ═══ -->
+  <div id="tab-other" class="tab-panel">
+    <div id="other-sub-input">
+      <div class="card">
+        <div class="card-title">他業務 入力フォーム</div>
+
+        <!-- クライアント選択 -->
+        <div class="form-group">
+          <label>クライアント *</label>
+          <select id="ow-client" onchange="onOtherClientChange()">
+            <option value="Flex">Flex</option>
+            <option value="Fresh">Fresh</option>
+            <option value="ハコベル">ハコベル</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-group" id="ow-client-custom-wrap" style="display:none;">
+          <label>クライアント名（自由入力）</label>
+          <input type="text" id="ow-client-custom" placeholder="クライアント名を入力">
+        </div>
+
+        <!-- 日付 -->
+        <div class="form-group">
+          <label>日付 *</label>
+          <input type="date" id="ow-date">
+        </div>
+
+        <!-- 集荷時間 / 終了時間（時・分を別々に5分刻み） -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>集荷時間</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <select id="ow-pickup-h" style="flex:1;"></select>
+              <span style="color:var(--text2);font-weight:700;">:</span>
+              <select id="ow-pickup-m" style="flex:1;"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>終了時間</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <select id="ow-end-h" style="flex:1;"></select>
+              <span style="color:var(--text2);font-weight:700;">:</span>
+              <select id="ow-end-m" style="flex:1;"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 集荷先 -->
+        <div class="form-group">
+          <label>集荷先</label>
+          <select id="ow-pickup-loc" onchange="onOtherPickupChange()">
+            <option value="北広島Flex">北広島Flex</option>
+            <option value="雁来Flex">雁来Flex</option>
+            <option value="澄川Fresh">澄川Fresh</option>
+            <option value="北24条Fresh">北24条Fresh</option>
+            <option value="自由入力">自由入力</option>
+          </select>
+        </div>
+        <div class="form-group" id="ow-pickup-loc-custom-wrap" style="display:none;">
+          <label>集荷先（自由入力）</label>
+          <input type="text" id="ow-pickup-loc-custom" placeholder="集荷先を入力">
+        </div>
+
+        <!-- 配達先 -->
+        <div class="form-group">
+          <label>配達先</label>
+          <input type="text" id="ow-delivery-loc" placeholder="配達先を入力">
+        </div>
+
+        <!-- 金額 -->
+        <div class="form-group">
+          <label>金額（円）</label>
+          <input type="number" id="ow-amount" min="0" step="100" placeholder="0">
+        </div>
+
+        <!-- メモ -->
+        <div class="form-group">
+          <label>メモ</label>
+          <textarea id="ow-memo" rows="2" placeholder="自由メモ"></textarea>
+        </div>
+
+        <div id="other-input-result"></div>
+        <button class="btn btn-primary" onclick="submitOtherWork()">✅ 業務を確定する</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ 手動入力 ═══ -->
+  <div id="tab-manual" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">電話受付などの手動入力</div>
+      <div class="alert alert-info" style="margin-bottom:14px">フォームから来ていない依頼を手動登録できます。</div>
+
+      <!-- 希望日時 -->
+      <div class="form-group"><label>希望日時</label><input type="datetime-local" id="m-datetime"></div>
+
+      <!-- 荷物情報 -->
+      <div class="form-group"><label>荷物内容</label><input type="text" id="m-cargo" placeholder="ダンボール3箱など"></div>
+      <div class="form-group"><label>重量</label>
+        <select id="m-weight"><option value="">選択...</option><option value="light">〜30kg</option>
+          <option value="heavy1">30〜50kg</option><option value="heavy2">50kg超</option></select>
+      </div>
+
+      <!-- 集荷先住所 -->
+      <div class="form-group">
+        <label>集荷先住所 *</label>
+        <input type="text" id="m-pickup" placeholder="札幌市○○区...">
+        <div style="display:flex;gap:16px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text2);cursor:pointer;">
+            <input type="radio" name="m-pickup-type" value="戸建" onchange="onBuildingTypeChange('pickup')"> 戸建
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text2);cursor:pointer;">
+            <input type="radio" name="m-pickup-type" value="マンション" onchange="onBuildingTypeChange('pickup')"> マンション/アパート
+          </label>
+        </div>
+        <div id="m-pickup-house" style="display:none;margin-top:6px;">
+          <input type="text" id="m-pickup-house-detail" placeholder="建物の特徴（例: 白い2階建て、外観・目印など）">
+        </div>
+        <div id="m-pickup-building" style="display:none;margin-top:6px;">
+          <input type="text" id="m-pickup-building-name" placeholder="建物名・部屋番号（例: ○○マンション 101号室）">
+        </div>
+      </div>
+
+      <!-- 配達先住所 -->
+      <div class="form-group">
+        <label>配達先住所 *</label>
+        <input type="text" id="m-delivery" placeholder="札幌市○○区...">
+        <div style="display:flex;gap:16px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text2);cursor:pointer;">
+            <input type="radio" name="m-delivery-type" value="戸建" onchange="onBuildingTypeChange('delivery')"> 戸建
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--text2);cursor:pointer;">
+            <input type="radio" name="m-delivery-type" value="マンション" onchange="onBuildingTypeChange('delivery')"> マンション/アパート
+          </label>
+        </div>
+        <div id="m-delivery-house" style="display:none;margin-top:6px;">
+          <input type="text" id="m-delivery-house-detail" placeholder="建物の特徴（例: 白い2階建て、外観・目印など）">
+        </div>
+        <div id="m-delivery-building" style="display:none;margin-top:6px;">
+          <input type="text" id="m-delivery-building-name" placeholder="建物名・部屋番号（例: ○○マンション 101号室）">
+        </div>
+      </div>
+
+      <!-- 追加住所 -->
+      <div id="m-extra-list"></div>
+      <div style="margin-bottom:12px;">
+        <button type="button" id="m-extra-add-btn" class="btn btn-secondary btn-sm" onclick="addExtraAddr()">＋ 追加住所を追加</button>
+      </div>
+
+      <!-- 経路・距離計算 -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openManualRoute()">🗺️ 経路を見る</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="fetchManualDist()">📏 距離を計算</button>
+      </div>
+      <div id="m-dist-result" style="margin-bottom:12px;"></div>
+
+      <!-- 基本情報 -->
+      <div class="form-group"><label>氏名</label><input type="text" id="m-name" placeholder="山田 太郎"></div>
+      <div class="form-group"><label>電話番号</label><input type="tel" id="m-tel" placeholder="090-0000-0000"></div>
+      <div class="form-group"><label>メール</label><input type="email" id="m-email" placeholder="example@email.com"></div>
+      <div class="form-group"><label>希望連絡方法</label>
+        <select id="m-contact"><option>電話</option><option>メール</option><option>LINE</option></select>
+      </div>
+
+      <!-- 支払い・備考 -->
+      <div class="form-group"><label>支払い方法</label>
+        <select id="m-payment"><option value="">選択...</option><option>銀行振込</option><option>現金</option><option>PayPay</option></select>
+      </div>
+      <div class="form-group"><label>備考</label><textarea id="m-note" rows="2"></textarea></div>
+      <div id="manual-result"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="submitManual()">📥 配送依頼として登録</button>
+        <button class="btn btn-secondary" onclick="submitManualInquiry()">📩 問い合わせとして登録</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ローディング -->
+<div id="loading-overlay" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><span>処理中...</span></div>
+</div>
+
+<!-- 領収書モーダル -->
+<div id="receipt-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">領収書を送付しますか？</div>
+    <div class="modal-sub">内容を確認・編集して送信してください。</div>
+    <div class="modal-field">
+      <label class="modal-label">宛名</label>
+      <input type="text" id="receipt-name">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">送付先メールアドレス</label>
+      <input type="email" id="receipt-email">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">基本料金</label>
+      <input type="number" id="receipt-amount" min="0">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">高速代（任意・別記で発行）</label>
+      <input type="number" id="receipt-highway" min="0" placeholder="0">
+    </div>
+    <div class="modal-field" style="margin-bottom:16px;">
+      <label class="modal-label">但し書き</label>
+      <input type="text" id="receipt-desc">
+    </div>
+    <div id="receipt-result" style="margin-bottom:10px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1" onclick="submitReceipt()">送信</button>
+      <button class="btn" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);" onclick="closeReceiptModal()">スキップ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// 状態
+// ══════════════════════════════════════════════════════
+let token = sessionStorage.getItem("token") || "";
+let deliveryRows          = [];
+let inquiryRows           = [];
+let archivedInquiryRows   = [];
+let confirmedRows         = [];
+let distCache = {};  // rid -> km
+let showingArchive = false;
+
+// ══════════════════════════════════════════════════════
+// GAS 呼び出し
+// ══════════════════════════════════════════════════════
+function callGas(body) {
+  return new Promise((resolve, reject) => {
+    if (typeof google !== "undefined" && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(r => resolve(r))
+        .withFailureHandler(e => reject(e))
+        .dispatch(body.action, body);
+    } else {
+      reject(new Error("google.script.run が使えません"));
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// ローディング
+// ══════════════════════════════════════════════════════
+function loading(show) {
+  document.getElementById("loading-overlay").style.display = show ? "flex" : "none";
+}
+
+// ══════════════════════════════════════════════════════
+// 認証
+// ══════════════════════════════════════════════════════
+async function doLogin() {
+  const user = document.getElementById("login-user").value.trim();
+  const pass = document.getElementById("login-pass").value;
+  const errEl = document.getElementById("login-err");
+  errEl.style.display = "none";
+  loading(true);
+  try {
+    const res = await callGas({ action: "login", username: user, password: pass });
+    if (res.ok) {
+      token = res.token;
+      sessionStorage.setItem("token", token);
+      showMain();
+    } else {
+      errEl.textContent = res.error || "ログイン失敗";
+      errEl.style.display = "flex";
+    }
+  } catch(e) {
+    errEl.textContent = "通信エラー: " + e.message;
+    errEl.style.display = "flex";
+  } finally { loading(false); }
+}
+
+document.getElementById("login-pass").addEventListener("keydown", e => {
+  if (e.key === "Enter") doLogin();
+});
+
+function doLogout() {
+  token = "";
+  sessionStorage.removeItem("token");
+  document.getElementById("main-screen").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+}
+
+// ══════════════════════════════════════════════════════
+// 初期化
+// ══════════════════════════════════════════════════════
+window.addEventListener("DOMContentLoaded", () => {
+  if (token) showMain();
+});
+
+async function showMain() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("main-screen").style.display = "block";
+  loading(true);
+  try {
+    await Promise.all([loadDeliveries(), loadInquiries(), updateUnreadBadges()]);
+  } finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// タブ
+// ══════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll(".tab-btn").forEach((b, i) => {
+    const names = ["manual","delivery","other","inquiry","line","board","banner"];
+    b.classList.toggle("active", names[i] === name);
+  });
+  document.querySelectorAll(".tab-panel").forEach(p => {
+    p.classList.toggle("active", p.id === "tab-" + name);
+  });
+  if (name === "board")  loadConfirmed();
+  if (name === "line")   loadMessages();
+  if (name === "other")  initOtherTab();
+  if (name === "banner") initBannerTab();
+}
+
+// ── バナー ──────────────────────────────────────────────────
+async function initBannerTab() {
+  initDateSelects();
+  showBannerStatus("読み込み中...", "var(--text2)");
+  try {
+    const res = await callGas({ action: "getBanner", token });
+    if (!res.ok) { showBannerStatus("取得失敗: " + res.error, "red"); return; }
+    document.getElementById("bannerText").value = res.text || "";
+    showBannerStatus(res.active ? "現在: 表示中" : "現在: 非表示", res.active ? "var(--green)" : "var(--text2)");
+  } catch(e) { showBannerStatus("エラー: " + e.message, "red"); }
+}
+
+// ---- 日付セレクト初期化（月・日・時） ----
+let _dateSelectsInited = false;
+function initDateSelects() {
+  if (_dateSelectsInited) return;
+  _dateSelectsInited = true;
+  const SEL = (id) => document.getElementById(id);
+  const addOpts = (sel, items) => items.forEach(([v, t]) => sel.add(new Option(t, v)));
+  const months = Array.from({length:12}, (_,i) => [i+1, (i+1)+"月"]);
+  const days   = Array.from({length:31}, (_,i) => [i+1, (i+1)+"日"]);
+  const hours  = Array.from({length:17}, (_,i) => [i+6, (i+6)+"時"]);  // 6〜22時
+  ["kb-month","lb-month"].forEach(id => addOpts(SEL(id), months));
+  ["kb-day",  "lb-day"  ].forEach(id => addOpts(SEL(id), days));
+  ["kb-hour", "lb-hour" ].forEach(id => addOpts(SEL(id), hours));
+}
+
+// ---- HP バナー 帰り便テンプレ ----
+function getKbArea() {
+  const sel = document.getElementById("kb-area-sel").value;
+  if (sel === "other") return document.getElementById("kb-area-text").value.trim();
+  return sel;
+}
+
+function onKbAreaChange() {
+  const isOther = document.getElementById("kb-area-sel").value === "other";
+  document.getElementById("kb-area-text").style.display = isOther ? "block" : "none";
+  updateKaeribi();
+}
+
+function calcYoubi(month, day) {
+  if (!month || !day) return "";
+  const d = new Date(new Date().getFullYear(), parseInt(month) - 1, parseInt(day));
+  if (d < new Date()) d.setFullYear(d.getFullYear() + 1);
+  return ["日","月","火","水","木","金","土"][d.getDay()];
+}
+
+function buildKaeriBinText() {
+  const month = document.getElementById("kb-month").value;
+  const day   = document.getElementById("kb-day").value;
+  const hour  = document.getElementById("kb-hour").value;
+  const area  = getKbArea();
+  const youbi   = calcYoubi(month, day);
+  const datePart = (month && day) ? month + "/" + day + "（" + youbi + "）" : "○/○（○）";
+  const hourPart = hour ? hour + "時頃" : "○時頃";
+  const areaPart = area ? area + "エリア" : "〇〇エリア";
+  return "【帰り便特別価格のご案内】" + datePart + hourPart + "、" + areaPart + "着の配送があります。" + areaPart + "から札幌方面への荷物がある方は、この機会に半額でご利用いただけます！お問い合わせ・ご相談はLINE・フォーム・お電話からお気軽にどうぞ。";
+}
+
+function updateKaeribi() {
+  const month = document.getElementById("kb-month").value;
+  const day   = document.getElementById("kb-day").value;
+  const youbi = calcYoubi(month, day);
+  document.getElementById("kb-youbi").textContent = youbi ? "（" + youbi + "）" : "";
+  document.getElementById("kb-preview").textContent = buildKaeriBinText();
+}
+
+function applyKaeriBinBanner() {
+  document.getElementById("bannerText").value = buildKaeriBinText();
+}
+
+async function setBanner(active) {
+  const text = document.getElementById("bannerText").value.trim();
+  if (active && !text) { showBannerStatus("文言を入力してください", "var(--yellow)"); return; }
+  showBannerStatus("保存中...", "var(--text2)");
+  try {
+    const res = await callGas({ action: "setBanner", token, text, active });
+    if (!res.ok) { showBannerStatus("保存失敗: " + res.error, "red"); return; }
+    showBannerStatus(active ? "表示ONにしました" : "表示OFFにしました", active ? "var(--green)" : "var(--text2)");
+  } catch(e) { showBannerStatus("エラー: " + e.message, "red"); }
+}
+
+function showBannerStatus(msg, color) {
+  const el = document.getElementById("banner-status");
+  el.textContent = msg;
+  el.style.color = color || "var(--text)";
+}
+
+// ---- LINE 帰り便速報ブロードキャスト ----
+let lineBcType = "simple";
+
+function getLbArea(selId, textId) {
+  const sel = document.getElementById(selId).value;
+  if (sel === "other") return document.getElementById(textId).value.trim() || "○○";
+  return sel || "○○";
+}
+
+function onLbFromChange() {
+  const isOther = document.getElementById("lb-from-sel").value === "other";
+  document.getElementById("lb-from-text").style.display = isOther ? "block" : "none";
+  updateLineBc();
+}
+
+
+function selectLineBcType(type) {
+  lineBcType = type;
+  const btnSimple = document.getElementById("lb-btn-simple");
+  const btnDetail = document.getElementById("lb-btn-detail");
+  if (type === "simple") {
+    btnSimple.style.borderColor = "var(--green)"; btnSimple.style.color = "var(--green)";
+    btnDetail.style.borderColor = "var(--border)"; btnDetail.style.color = "var(--text2)";
+  } else {
+    btnDetail.style.borderColor = "var(--green)"; btnDetail.style.color = "var(--green)";
+    btnSimple.style.borderColor = "var(--border)"; btnSimple.style.color = "var(--text2)";
+  }
+  updateLineBc();
+}
+
+function buildLineBcText(type) {
+  const from  = getLbArea("lb-from-sel", "lb-from-text");
+  const to    = "札幌";
+  const month = document.getElementById("lb-month").value;
+  const day   = document.getElementById("lb-day").value;
+  const hour  = document.getElementById("lb-hour").value;
+  const youbi   = calcYoubi(month, day) || "○";
+  const datePart = (month && day) ? month + "月" + day + "日（" + youbi + "）" : "○月○日（○）";
+  const hourPart = hour ? hour + ":00以降" : "○:00以降";
+  if (type === "simple") {
+    return "【帰り便のお知らせ】\n\n本日、" + from + "→" + to + "方面の\n帰り便が出ています！\n\n片道分の料金でお得に利用いただけます。\n\nご依頼はお早めに！\n\nTEMC 松本";
+  } else {
+    return "帰り便のご案内です\n\n■ 日時：" + datePart + hourPart + "\n■ ルート：" + from + "→" + to + "方面\n■ 料金：通常より割引あり\n\n先着順となりますので\nご希望の方はお早めにご連絡ください。\n\nTEMC 松本";
+  }
+}
+
+function updateLineBc() {
+  const month = document.getElementById("lb-month").value;
+  const day   = document.getElementById("lb-day").value;
+  const youbi = calcYoubi(month, day);
+  document.getElementById("lb-youbi").textContent = youbi ? "（" + youbi + "）" : "";
+  document.getElementById("line-bc-message").value = buildLineBcText(lineBcType);
+}
+
+async function broadcastLine() {
+  const message = (document.getElementById("line-bc-message").value || "").trim();
+  const statusEl = document.getElementById("line-bc-status");
+  if (!message) { statusEl.textContent = "メッセージを入力してください"; statusEl.style.color = "var(--yellow)"; return; }
+  if (!confirm("友達追加済みの全員にLINEを送信します。よろしいですか？")) return;
+  statusEl.textContent = "送信中..."; statusEl.style.color = "var(--text2)";
+  try {
+    const res = await callGas({ action: "broadcastLine", token, message });
+    if (res.ok) {
+      statusEl.textContent = "✅ 送信完了！";
+      statusEl.style.color = "var(--green)";
+    } else {
+      statusEl.textContent = "❌ 送信失敗: " + (res.error || "不明");
+      statusEl.style.color = "var(--red)";
+    }
+  } catch(e) {
+    statusEl.textContent = "❌ エラー: " + e.message;
+    statusEl.style.color = "var(--red)";
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// 未読バッジ
+// ══════════════════════════════════════════════════════
+async function updateUnreadBadges() {
+  try {
+    const res = await callGas({ action: "countUnread", token });
+    if (!res.ok) return;
+    const el = document.getElementById("unread-badges");
+    el.innerHTML = "";
+    if (res.delivery > 0) el.innerHTML += `<span class="badge">🚚 ${res.delivery}</span>`;
+    if (res.inquiry  > 0) el.innerHTML += `<span class="badge">📩 ${res.inquiry}</span>`;
+
+    // タブのラベルも更新
+    const tabBtns = document.querySelectorAll(".tab-btn");
+    tabBtns[1].textContent = "🚚 配送依頼" + (res.delivery > 0 ? " 🔴" + res.delivery : "");
+    tabBtns[3].textContent = "📩 問い合わせ" + (res.inquiry  > 0 ? " 🔴" + res.inquiry  : "");
+  } catch(e) { /* ignore */ }
+}
+
+// ══════════════════════════════════════════════════════
+// ユーティリティ
+// ══════════════════════════════════════════════════════
+function fmtDt(v) {
+  if (!v) return "日時未定";
+  try { return new Date(v).toLocaleString("ja-JP", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}); }
+  catch(e) { return v; }
+}
+
+function fieldVal(v, label) {
+  if (v == null || v === "" || v === false) {
+    return `<span class="field-empty">（未入力）</span>`;
+  }
+  return `<span class="field-val">${escHtml(String(v))}</span>`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function mapsLink(addr) {
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addr);
+}
+function routeLink(a, b) {
+  return "https://www.google.com/maps/dir/" + encodeURIComponent(a) + "/" + encodeURIComponent(b);
+}
+
+function calcPrice(km, opts) {
+  opts = opts || [];
+  let base = 0;
+  const rates = [[5,1500],[10,2500],[20,3500],[30,4500],[999,5000]];
+  for (const [max, rate] of rates) { if (km <= max) { base = rate; break; } }
+  if (km > 30) base = 5000 + Math.floor((km - 30) * 100);
+  const OPTIONS = {"重量物（30〜50kg）":500,"重量物（50kg超）":0};
+  let optTotal = 0;
+  opts.forEach(o => { if (OPTIONS[o] !== undefined) optTotal += OPTIONS[o]; });
+  return base + optTotal;
+}
+
+function buildReplyTemplate(rec, formType) {
+  const name = rec.name || "お客様";
+  const inquiry = rec.inquiry_type || "ご質問";
+  if (formType === "delivery") {
+    const distKm = distCache[rec.id];
+    const priceStr = distKm ? "¥" + calcPrice(distKm).toLocaleString() : "（後ほど連絡）";
+    return `${name} 様\n\nこの度はTEMCへのご依頼、ありがとうございます。\n\n配送依頼を確認いたしました。\n概算料金は ${priceStr} となります。\n\nご確認いただけましたら、お振込先をご案内いたします。\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 080-XXXX-XXXX`;
+  } else {
+    return `${name} 様\n\nこの度はTEMCへのお問い合わせ、ありがとうございます。\n\n${inquiry}の件、確認いたしました。\n担当者より改めてご連絡いたします。\n\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 080-XXXX-XXXX`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// 配送依頼
+// ══════════════════════════════════════════════════════
+async function loadDeliveries() {
+  loading(true);
+  try {
+    const res = await callGas({ action: "loadDeliveries", token });
+    if (!res.ok) { showAlert("delivery-list", "error", res.error); return; }
+    deliveryRows = res.rows;
+    renderDeliveries();
+    updateUnreadBadges();
+  } catch(e) { showAlert("delivery-list", "error", e.message); }
+  finally { loading(false); }
+}
+
+function renderDeliveries() {
+  const sort = document.getElementById("delivery-sort").value;
+  let rows = [...deliveryRows];
+
+  if (sort === "default") {
+    const unread = rows.filter(r => !r.is_read).sort((a,b) => safeDt(a.desired_datetime) - safeDt(b.desired_datetime));
+    const read   = rows.filter(r =>  r.is_read).sort((a,b) => safeDt(a.desired_datetime) - safeDt(b.desired_datetime));
+    rows = [...unread, ...read];
+  } else if (sort === "new") {
+    rows.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+  } else if (sort === "old") {
+    rows.sort((a,b) => new Date(a.created_at||0) - new Date(b.created_at||0));
+  } else {
+    const unread = rows.filter(r => !r.is_read);
+    const read   = rows.filter(r =>  r.is_read);
+    rows = [...unread, ...read];
+  }
+
+  const el = document.getElementById("delivery-list");
+  if (!rows.length) { el.innerHTML = '<div class="alert alert-info">対応中の配送依頼はありません。</div>'; return; }
+  el.innerHTML = rows.map(r => buildDeliveryCard(r)).join("");
+
+  // 未読を自動既読
+  rows.filter(r => !r.is_read).forEach(r => markRead(r.id));
+}
+
+function safeDt(v) {
+  if (!v) return 9999999999999;
+  const d = new Date(v);
+  return isNaN(d) ? 9999999999999 : d.getTime();
+}
+
+function buildDeliveryCard(rec) {
+  const statusIcon = {新規:"🔴",対応中:"🟡",確定入金待ち:"🔵",確定:"🟢"}[rec.status] || "⚪";
+  const unreadBadge = !rec.is_read ? '<span style="color:var(--red);font-size:.78rem;font-weight:700;">🔴 未読 </span>' : "";
+  const id = rec.id;
+  const tel  = rec.tel  || "";
+  const pickup   = rec.pickup_address   || "";
+  const delivery = rec.delivery_address || "";
+  const statusFlow = ["新規","対応中","確定入金待ち","確定"];
+  const curIdx = statusFlow.indexOf(rec.status);
+
+  const contactMethod = rec.contact_method || "電話";
+  const template = buildReplyTemplate(rec, "delivery");
+
+  let contactHtml = "";
+  if (contactMethod.includes("電話") || contactMethod === "phone") {
+    contactHtml = `<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">📞 電話</p>
+      <div class="template-box">${escHtml(template)}</div>
+      ${tel ? `<a class="tel-link" href="tel:${escHtml(tel)}">📞 ${escHtml(tel)} に発信</a>` : ""}`;
+  } else if (contactMethod.includes("メール") || contactMethod.toLowerCase().includes("email")) {
+    const mailHref = `mailto:${encodeURIComponent(rec.email||'')}`
+      + `?subject=${encodeURIComponent('【TEMC】配送依頼のご回答')}`
+      + `&body=${encodeURIComponent(template)}`;
+    contactHtml = `<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">📧 メール</p>
+      <textarea id="reply-tmpl-${id}" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>
+      <div style="margin-top:6px;">
+        ${rec.email ? `<a class="btn btn-secondary btn-sm" href="${mailHref}">📧 メールを開く</a>` : '<span style="font-size:.8rem;color:var(--text3);">メールアドレス未入力</span>'}
+      </div>`;
+  } else if (contactMethod.toLowerCase().includes("line")) {
+    contactHtml = `<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">💬 LINE</p>
+      <textarea id="reply-tmpl-${id}" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn btn-secondary btn-sm" onclick="copyReplyTpl(${id})">📋 コピー</button>
+        <a class="btn btn-secondary btn-sm" href="https://chat.line.biz/" target="_blank">💬 LINEを開く</a>
+      </div>
+      <span id="copy-done-reply-${id}" style="display:none;font-size:.78rem;color:var(--green);margin-top:4px;">✅ コピーしました</span>`;
+  }
+
+  return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-${id}">
+    <div class="acc-header" onclick="toggleAcc('${id}')">
+      <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")} 様 　📅 ${fmtDt(rec.desired_datetime)}</div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="cols-2" style="margin-top:12px;">
+        <div>
+          <p class="card-title" style="margin-bottom:8px;">依頼詳細</p>
+          ${fieldRow("氏名", rec.name)}
+          ${fieldRow("電話番号", rec.tel)}
+          ${fieldRow("メール", rec.email)}
+          ${fieldRow("希望連絡方法", rec.contact_method)}
+          <hr class="section-sep">
+          ${addrRow("集荷先", rec.pickup_address)}
+          ${addrRow("配達先", rec.delivery_address)}
+          ${pickup && delivery ? `<p style="margin:6px 0;font-size:.82rem;"><a href="${routeLink(pickup,delivery)}" target="_blank" style="color:var(--accent);">🗺️ 経路を見る</a></p>` : ""}
+          ${fieldRow("希望日時", fmtDt(rec.desired_datetime))}
+          ${fieldRow("荷物内容", rec.cargo_info)}
+          ${fieldRow("重量", rec.weight)}
+          ${fieldRow("支払い方法", rec.payment_method)}
+          ${fieldRow("備考", rec.note)}
+        </div>
+        <div>
+          <p class="card-title" style="margin-bottom:8px;">距離・料金</p>
+          <div id="dist-${id}">
+            ${pickup && delivery
+              ? `<button class="btn btn-secondary btn-sm" onclick="fetchDist(${id},'${escHtml(pickup)}','${escHtml(delivery)}')">📏 距離を計算</button>`
+              : `<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>`}
+          </div>
+          <hr class="section-sep" style="margin:12px 0;">
+          <p class="card-title" style="margin-bottom:8px;">見積もり返信</p>
+          ${contactHtml}
+        </div>
+      </div>
+
+      <hr class="section-sep">
+      <div class="status-btns">
+        <button class="btn btn-secondary btn-sm" onclick="updateStatus(${id},'新規')" ${curIdx===0?'disabled':''}>↩ 新規</button>
+        <button class="btn btn-secondary btn-sm" onclick="updateStatus(${id},'対応中')" ${curIdx>=1?'disabled':''}>→ 対応中</button>
+        <button class="btn btn-secondary btn-sm" onclick="updateStatus(${id},'確定入金待ち')" ${curIdx>=2?'disabled':''}>→ 確定入金待ち</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmAndMoveTab(${id},'確定','業務ボード','board')" ${curIdx>=3?'disabled':''}>✅ 確定（業務ボードへ）</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>📝 社内メモ</label>
+        <textarea id="memo-d-${id}" rows="2">${escHtml(rec.memo||"")}</textarea>
+        <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="saveMemo(${id},'memo-d-${id}','memo-result-d-${id}')">メモ保存</button>
+        <div id="memo-result-d-${id}" style="margin-top:6px;"></div>
+      </div>
+      <hr class="section-sep">
+      <div>
+        <button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;" onclick="confirmDelete(${id})">🗑 削除</button>
+        <div id="del-confirm-${id}" style="display:none;margin-top:8px;padding:10px;background:rgba(240,91,91,.1);border:1px solid var(--red);border-radius:8px;font-size:.85rem;">
+          本当に削除しますか？
+          <button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="executeDelete(${id})">削除する</button>
+          <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="cancelDelete(${id})">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function fieldRow(label, val) {
+  const empty = (val == null || val === "" || val === false);
+  return `<div class="field-row"><span class="field-label">${label}</span>${empty ? '<span class="field-empty">（未入力）</span>' : '<span class="field-val">' + escHtml(String(val)) + '</span>'}</div>`;
+}
+function addrRow(label, addr) {
+  if (!addr) return fieldRow(label, "");
+  return `<div class="field-row"><span class="field-label">${label}</span><span class="field-val">${escHtml(addr)} <a href="${mapsLink(addr)}" target="_blank" style="color:var(--accent);font-size:.78rem;">📍</a></span></div>`;
+}
+
+async function fetchDist(id, pickup, delivery) {
+  const el = document.getElementById("dist-" + id);
+  el.innerHTML = '<div class="spinner" style="width:16px;height:16px;margin:4px 0;"></div>';
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (res.ok && res.dist != null) {
+      distCache[id] = res.dist;
+      const km = res.dist;
+      const price = calcPrice(km);
+      el.innerHTML = `<div class="metric"><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
+        <div class="metric"><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>`;
+    } else {
+      el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// 問い合わせ
+// ══════════════════════════════════════════════════════
+async function loadInquiries() {
+  loading(true);
+  try {
+    const res = await callGas({ action: "loadInquiries", token });
+    if (!res.ok) { showAlert("inquiry-list", "error", res.error); return; }
+    inquiryRows = res.rows;
+    renderInquiries();
+    updateUnreadBadges();
+  } catch(e) { showAlert("inquiry-list", "error", e.message); }
+  finally { loading(false); }
+}
+
+function renderInquiries() {
+  const sort = document.getElementById("inquiry-sort").value;
+  let rows = [...inquiryRows];
+  if (sort === "default") {
+    const unread   = rows.filter(r => !r.is_read);
+    const unreplied= rows.filter(r => r.is_read && r.status !== "完了");
+    const done     = rows.filter(r => r.status === "完了");
+    rows = [...unread, ...unreplied, ...done];
+  } else if (sort === "new") {
+    rows.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+  } else if (sort === "old") {
+    rows.sort((a,b) => new Date(a.created_at||0) - new Date(b.created_at||0));
+  } else {
+    rows = [...rows.filter(r=>!r.is_read), ...rows.filter(r=>r.is_read)];
+  }
+  const el = document.getElementById("inquiry-list");
+  if (!rows.length) { el.innerHTML = '<div class="alert alert-info">問い合わせはありません。</div>'; return; }
+  el.innerHTML = rows.map(r => buildInquiryCard(r)).join("");
+  rows.filter(r => !r.is_read).forEach(r => markRead(r.id));
+}
+
+function buildInquiryCard(rec) {
+  const statusIcon = {新規:"🔴",返信待ち:"🟡",未返信:"🔵",完了:"🟢"}[rec.status] || "⚪";
+  const unreadBadge = !rec.is_read ? '<span style="color:var(--red);font-size:.78rem;font-weight:700;">🔴 未読 </span>' : "";
+  const id = rec.id;
+  const template = buildReplyTemplate(rec, "inquiry");
+  const tel   = rec.tel   || "";
+  const email = rec.email || "";
+  const contactMethod = rec.contact_method || "電話";
+
+  let contactHtml = "";
+  if (contactMethod.includes("電話") || contactMethod === "phone") {
+    contactHtml = `<div class="template-box">${escHtml(template)}</div>
+      ${tel ? `<a class="tel-link" href="tel:${escHtml(tel)}">📞 ${escHtml(tel)} に発信</a>` : ""}`;
+  } else {
+    contactHtml = `<textarea style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>`;
+  }
+
+  return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-i-${id}">
+    <div class="acc-header" onclick="toggleAcc('i-${id}')">
+      <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")} 様 　📌 ${escHtml(rec.inquiry_type||"一般")}</div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="cols-2" style="margin-top:12px;">
+        <div>
+          <p class="card-title" style="margin-bottom:8px;">問い合わせ内容</p>
+          ${fieldRow("氏名", rec.name)}
+          ${fieldRow("電話番号", rec.tel)}
+          ${fieldRow("メール", rec.email)}
+          ${fieldRow("希望連絡方法", rec.contact_method)}
+          ${fieldRow("種別", rec.inquiry_type)}
+          <hr class="section-sep">
+          <p style="font-size:.8rem;color:var(--text2);margin-bottom:4px;">メッセージ</p>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:.85rem;color:var(--text);">${rec.message ? escHtml(rec.message) : '<span class="field-empty">（未入力）</span>'}</div>
+        </div>
+        <div>
+          <p class="card-title" style="margin-bottom:8px;">返信テンプレート</p>
+          ${contactHtml}
+        </div>
+      </div>
+      <hr class="section-sep">
+      <div class="status-btns">
+        <button class="btn btn-secondary btn-sm" onclick="updateStatusI(${id},'返信待ち')" ${rec.status==='返信待ち'?'disabled':''}>→ 返信待ち</button>
+        <button class="btn btn-secondary btn-sm" onclick="updateStatusI(${id},'未返信')" ${rec.status==='未返信'?'disabled':''}>← 未返信</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmCompleteInquiry(${id})" ${rec.status==='完了'?'disabled':''}>✅ 完了</button>
+        <button class="btn btn-secondary btn-sm" onclick="updateStatusI(${id},'新規')" ${rec.status==='新規'?'disabled':''}>↩️ 新規に戻す</button>
+      </div>
+      <div style="margin-top:12px;">
+        <label>📝 社内メモ</label>
+        <textarea id="memo-i-${id}" rows="2">${escHtml(rec.memo||"")}</textarea>
+        <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="saveMemo(${id},'memo-i-${id}','memo-result-i-${id}')">メモ保存</button>
+        <div id="memo-result-i-${id}" style="margin-top:6px;"></div>
+      </div>
+      <hr class="section-sep">
+      <div>
+        <button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;" onclick="confirmDelete(${id})">🗑 削除</button>
+        <div id="del-confirm-${id}" style="display:none;margin-top:8px;padding:10px;background:rgba(240,91,91,.1);border:1px solid var(--red);border-radius:8px;font-size:.85rem;">
+          本当に削除しますか？
+          <button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="executeDelete(${id})">削除する</button>
+          <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="cancelDelete(${id})">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// 業務ボード
+// ══════════════════════════════════════════════════════
+async function loadConfirmed() {
+  loading(true);
+  try {
+    const [resC, resO] = await Promise.all([
+      callGas({ action: "loadConfirmed",   token }),
+      callGas({ action: "loadOtherWorks",  token })
+    ]);
+    if (!resC.ok) { showAlert("board-list", "error", resC.error); return; }
+    confirmedRows  = resC.rows;
+    otherWorkRows  = resO.ok ? resO.rows : [];
+    renderBoard();
+  } catch(e) { showAlert("board-list", "error", e.message); }
+  finally { loading(false); }
+}
+
+function renderBoard() {
+  const el = document.getElementById("board-list");
+
+  // confirmedRows と otherWorkRows を日付昇順でマージ
+  const deliveryItems = confirmedRows.map(r => ({
+    _type: "delivery",
+    _sortKey: r.desired_datetime ? new Date(r.desired_datetime).getTime() : 9999999999999,
+    _data: r
+  }));
+  const otherItems = otherWorkRows.map(r => ({
+    _type: "other",
+    _sortKey: r.work_date ? new Date(r.work_date + "T" + (r.pickup_time || "00:00") + ":00").getTime() : 9999999999999,
+    _data: r
+  }));
+  const merged = [...deliveryItems, ...otherItems].sort((a, b) => a._sortKey - b._sortKey);
+
+  if (!merged.length) {
+    el.innerHTML = '<div class="alert alert-info">確定済みの案件はありません。<br>配送依頼タブでステータスを「確定」にするか、他業務を登録するとここに表示されます。</div>';
+    return;
+  }
+
+  const deliveryCount = deliveryItems.length;
+  const otherCount    = otherItems.length;
+  el.innerHTML =
+    `<div class="alert alert-success" style="margin-bottom:12px;">確定配送: ${deliveryCount}件　他業務: ${otherCount}件　計: ${merged.length}件</div>` +
+    merged.map(item =>
+      item._type === "delivery" ? buildBoardCard(item._data) : buildOtherWorkBoardCard(item._data)
+    ).join("");
+}
+
+function buildBoardCard(rec) {
+  const id       = rec.id;
+  const pickup   = rec.pickup_address   || "";
+  const delivery = rec.delivery_address || "";
+  const priceM   = (rec.note || '').match(/\[¥(\d+)\]/);
+  const autoAmount = priceM ? priceM[1] : '';
+
+  return `<div class="accordion" id="acc-b-${id}">
+    <div class="acc-header" onclick="toggleAcc('b-${id}')">
+      <div class="acc-title">🚚 ${escHtml(rec.name||"（名前なし）")} 様 　📅 ${fmtDt(rec.desired_datetime)}</div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div class="cols-2" style="margin-top:12px;">
+        <div>
+          ${fieldRow("依頼者", rec.name)}
+          ${rec.tel ? `<div class="field-row"><span class="field-label">電話番号</span><a href="tel:${escHtml(rec.tel)}" style="color:var(--red);font-weight:700;">${escHtml(rec.tel)}</a></div>` : fieldRow("電話番号","")}
+          ${fieldRow("希望日時", fmtDt(rec.desired_datetime))}
+          ${fieldRow("荷物", rec.cargo_info)}
+          ${fieldRow("支払い", rec.payment_method)}
+          <hr class="section-sep">
+          ${addrRow("集荷先", pickup)}
+          ${addrRow("配達先", delivery)}
+          ${pickup && delivery ? `<p style="margin:6px 0;"><a href="${routeLink(pickup,delivery)}" target="_blank" style="color:var(--accent);font-size:.82rem;">🗺️ 経路を見る</a></p>` : ""}
+        </div>
+        <div>
+          <div id="board-dist-${id}">
+            ${pickup && delivery
+              ? `<button class="btn btn-secondary btn-sm" onclick="fetchBoardDist(${id},'${escHtml(pickup)}','${escHtml(delivery)}')">📏 距離を計算</button>`
+              : `<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>`}
+          </div>
+          <hr class="section-sep" style="margin:12px 0;">
+          <label>確定金額（円）</label>
+          <input type="number" id="amount-${id}" value="${autoAmount}" min="0" step="100" style="margin-bottom:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="saveAmount(${id})">💾 金額を保存</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadIcal(${id})">📅 iCal</button>
+          </div>
+          <div id="amount-result-${id}" style="margin-top:6px;"></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <label>📝 社内メモ</label>
+        <textarea id="memo-b-${id}" rows="2">${escHtml(rec.memo||"")}</textarea>
+        <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="saveMemo(${id},'memo-b-${id}','memo-result-b-${id}')">メモ保存</button>
+        <div id="memo-result-b-${id}" style="margin-top:6px;"></div>
+      </div>
+      <hr class="section-sep">
+      <div>
+        <button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;" onclick="confirmDelete(${id})">🗑 削除</button>
+        <div id="del-confirm-${id}" style="display:none;margin-top:8px;padding:10px;background:rgba(240,91,91,.1);border:1px solid var(--red);border-radius:8px;font-size:.85rem;">
+          本当に削除しますか？
+          <button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="executeDelete(${id})">削除する</button>
+          <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="cancelDelete(${id})">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function fetchBoardDist(id, pickup, delivery) {
+  const el = document.getElementById("board-dist-" + id);
+  el.innerHTML = '<div class="spinner" style="width:16px;height:16px;margin:4px 0;"></div>';
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (res.ok && res.dist != null) {
+      distCache[id] = res.dist;
+      const km = res.dist;
+      const price = calcPrice(km);
+      el.innerHTML = `<div class="metric"><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
+        <div class="metric"><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>`;
+      // 金額フィールドに自動入力
+      const amountEl = document.getElementById("amount-" + id);
+      if (amountEl && !amountEl.value || amountEl.value == "0") amountEl.value = price;
+    } else {
+      el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
+    }
+  } catch(e) { el.innerHTML = '<div class="alert alert-error">' + e.message + '</div>'; }
+}
+
+async function completeDelivery(id) {
+  const rec = confirmedRows.find(r => r.id === id);
+  if (!rec) return;
+  const amount = parseInt(document.getElementById("amount-" + id).value) || 0;
+  if (!confirm(`配達完了にして売上 ¥${amount.toLocaleString()} を登録しますか？`)) return;
+  loading(true);
+  try {
+    const res = await callGas({ action: "completeDelivery", token, rec, totalAmount: amount });
+    if (res.ok) {
+      document.getElementById("complete-result-" + id).innerHTML = `<div class="alert alert-success">✅ 登録完了！売上 ¥${amount.toLocaleString()}</div>`;
+      showReceiptModal(rec, amount);
+      setTimeout(() => loadConfirmed(), 1500);
+    } else {
+      document.getElementById("complete-result-" + id).innerHTML = `<div class="alert alert-error">❌ ${res.error}</div>`;
+    }
+  } catch(e) {
+    document.getElementById("complete-result-" + id).innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+  } finally { loading(false); }
+}
+
+function showReceiptModal(rec, amount) {
+  document.getElementById("receipt-name").value   = rec.name  || "";
+  document.getElementById("receipt-email").value  = rec.email || "";
+  document.getElementById("receipt-amount").value = amount;
+  document.getElementById("receipt-highway").value = "";
+  document.getElementById("receipt-desc").value   = "運賃として";
+  document.getElementById("receipt-result").innerHTML = "";
+  window._receiptData = { amount };
+  document.getElementById("receipt-modal").style.display = "flex";
+}
+
+function closeReceiptModal() {
+  document.getElementById("receipt-modal").style.display = "none";
+}
+
+async function submitReceipt() {
+  const toEmail = document.getElementById("receipt-email").value.trim();
+  if (!toEmail) { alert("送付先メールアドレスを入力してください"); return; }
+  const name       = document.getElementById("receipt-name").value.trim();
+  const desc       = document.getElementById("receipt-desc").value.trim();
+  const amount     = parseInt(document.getElementById("receipt-amount").value) || 0;
+  const highwayFee = parseInt(document.getElementById("receipt-highway").value) || 0;
+  loading(true);
+  try {
+    const res = await callGas({ action: "sendReceipt", token, toEmail, name, amount, highwayFee, description: desc });
+    if (res.ok) {
+      document.getElementById("receipt-result").innerHTML =
+        `<div class="alert alert-success">✅ 送付完了（${res.receiptNo}）</div>`;
+      setTimeout(closeReceiptModal, 2000);
+    } else {
+      document.getElementById("receipt-result").innerHTML =
+        `<div class="alert alert-error">❌ ${res.error}</div>`;
+    }
+  } catch(e) {
+    document.getElementById("receipt-result").innerHTML =
+      `<div class="alert alert-error">❌ ${e.message}</div>`;
+  } finally { loading(false); }
+}
+
+async function downloadIcal(id) {
+  const rec = confirmedRows.find(r => r.id === id);
+  if (!rec) return;
+  loading(true);
+  try {
+    const res = await callGas({ action: "generateIcal", token, rec });
+    if (res.ok) {
+      const a = document.createElement("a");
+      a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(res.ical);
+      a.download = "temc_delivery_" + id + ".ics";
+      a.click();
+    }
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// 共通アクション
+// ══════════════════════════════════════════════════════
+async function markRead(id) {
+  try { await callGas({ action: "markRead", token, id }); } catch(e) { /* ignore */ }
+}
+
+async function confirmAndMoveTab(id, status, tabLabel, tabName) {
+  if (!confirm(`「${tabLabel}」タブに移動します。よろしいですか？`)) return;
+  loading(true);
+  try {
+    const res = await callGas({ action: "updateStatus", token, id, status });
+    if (res.ok) { await loadDeliveries(); switchTab(tabName); }
+  } catch(e) { alert(e?.message || String(e)); }
+  finally { loading(false); }
+}
+
+async function updateStatus(id, status) {
+  loading(true);
+  try {
+    const res = await callGas({ action: "updateStatus", token, id, status });
+    if (res.ok) await loadDeliveries();
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+async function updateStatusI(id, status) {
+  loading(true);
+  try {
+    const res = await callGas({ action: "updateStatus", token, id, status });
+    if (res.ok) await loadInquiries();
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+async function confirmCompleteInquiry(id) {
+  if (!confirm("完了してアーカイブに移動します。よろしいですか？")) return;
+  loading(true);
+  try {
+    const res = await callGas({ action: "completeAndArchiveInquiry", token, id });
+    if (res.ok) await loadInquiries();
+    else alert(res.error);
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+async function archiveInquiry(id) {
+  if (!confirm("この問い合わせをアーカイブします。よろしいですか？")) return;
+  loading(true);
+  try {
+    const res = await callGas({ action: "archiveInquiry", token, id });
+    if (res.ok) await loadInquiries();
+    else alert(res.error);
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+async function unarchiveInquiry(id) {
+  if (!confirm("アーカイブから元に戻しますか？")) return;
+  loading(true);
+  try {
+    const res = await callGas({ action: "unarchiveInquiry", token, id });
+    if (res.ok) await loadArchivedInquiries();
+    else alert(res.error);
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+async function loadArchivedInquiries() {
+  loading(true);
+  try {
+    const res = await callGas({ action: "loadArchivedInquiries", token });
+    if (!res.ok) { showAlert("archived-inquiry-list", "error", res.error); return; }
+    archivedInquiryRows = res.rows;
+    renderArchivedInquiries();
+  } catch(e) { showAlert("archived-inquiry-list", "error", e.message); }
+  finally { loading(false); }
+}
+
+function renderArchivedInquiries() {
+  const el = document.getElementById("archived-inquiry-list");
+  if (!archivedInquiryRows.length) {
+    el.innerHTML = '<div class="alert alert-info">アーカイブされた問い合わせはありません。</div>';
+    return;
+  }
+  el.innerHTML = '<p style="font-size:.8rem;color:var(--text2);margin-bottom:8px;">📦 アーカイブ済み一覧（↩ 戻すで元の一覧に復元できます）</p>'
+    + archivedInquiryRows.map(r => buildArchivedInquiryCard(r)).join("");
+}
+
+function buildArchivedInquiryCard(rec) {
+  const id = rec.id;
+  return `<div class="accordion" id="acc-arc-${id}">
+    <div class="acc-header" onclick="toggleAcc('arc-${id}')">
+      <div class="acc-title">📦 [${escHtml(rec.status||"完了")}] ${escHtml(rec.name||"（名前なし）")} 様 　📌 ${escHtml(rec.inquiry_type||"一般")}</div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      ${fieldRow("氏名", rec.name)}
+      ${fieldRow("電話番号", rec.tel)}
+      ${fieldRow("メール", rec.email)}
+      ${fieldRow("種別", rec.inquiry_type)}
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:.85rem;color:var(--text);margin-top:8px;">${rec.message ? escHtml(rec.message) : '<span class="field-empty">（未入力）</span>'}</div>
+      <div class="status-btns" style="margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="unarchiveInquiry(${id})">↩ 戻す</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function toggleArchiveView() {
+  showingArchive = !showingArchive;
+  const btn = document.getElementById("archive-toggle-btn");
+  const normalList   = document.getElementById("inquiry-list");
+  const archivedList = document.getElementById("archived-inquiry-list");
+  if (showingArchive) {
+    normalList.style.display   = "none";
+    archivedList.style.display = "block";
+    btn.textContent = "📋 通常一覧に戻る";
+    await loadArchivedInquiries();
+  } else {
+    normalList.style.display   = "block";
+    archivedList.style.display = "none";
+    btn.textContent = "📦 アーカイブ一覧";
+  }
+}
+
+async function saveMemo(id, inputId, resultId) {
+  const memo = document.getElementById(inputId).value;
+  try {
+    const res = await callGas({ action: "updateMemo", token, id, memo });
+    const el = document.getElementById(resultId);
+    el.innerHTML = res.ok
+      ? '<div class="alert alert-success" style="padding:6px 10px;font-size:.78rem;">✅ 保存しました</div>'
+      : `<div class="alert alert-error">❌ ${res.error}</div>`;
+    setTimeout(() => { if (el) el.innerHTML = ""; }, 3000);
+  } catch(e) { alert(e.message); }
+}
+
+// ══════════════════════════════════════════════════════
+// 手動入力 補助
+// ══════════════════════════════════════════════════════
+function onBuildingTypeChange(side) {
+  const val = document.querySelector(`input[name="m-${side}-type"]:checked`)?.value;
+  document.getElementById(`m-${side}-house`).style.display    = val === "戸建"      ? "block" : "none";
+  document.getElementById(`m-${side}-building`).style.display = val === "マンション" ? "block" : "none";
+}
+
+function buildAddressWithType(side) {
+  const addr = document.getElementById("m-" + side).value.trim();
+  const val  = document.querySelector(`input[name="m-${side}-type"]:checked`)?.value;
+  if (val === "戸建") {
+    const detail = document.getElementById("m-" + side + "-house-detail").value.trim();
+    return addr + (detail ? "（戸建: " + detail + "）" : "");
+  }
+  if (val === "マンション") {
+    const name = document.getElementById("m-" + side + "-building-name").value.trim();
+    return addr + (name ? "（" + name + "）" : "");
+  }
+  return addr;
+}
+
+function openManualRoute() {
+  const pickup   = document.getElementById("m-pickup").value.trim();
+  const delivery = document.getElementById("m-delivery").value.trim();
+  if (!pickup || !delivery) { alert("集荷先・配達先を入力してください"); return; }
+  window.open("https://www.google.com/maps/dir/" + encodeURIComponent(pickup) + "/" + encodeURIComponent(delivery), "_blank");
+}
+
+async function fetchManualDist() {
+  const pickup   = document.getElementById("m-pickup").value.trim();
+  const delivery = document.getElementById("m-delivery").value.trim();
+  const el = document.getElementById("m-dist-result");
+  if (!pickup || !delivery) { el.innerHTML = '<div class="alert alert-warn">集荷先・配達先を入力してください</div>'; return; }
+  el.innerHTML = '<div style="display:inline-flex;gap:8px;align-items:center;padding:8px 14px;background:var(--surface2);border-radius:8px;font-size:.82rem;color:var(--text2);"><div class="spinner" style="width:14px;height:14px;"></div>計算中...</div>';
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (res.ok && res.dist != null) {
+      const km = res.dist;
+      const price = calcPrice(km);
+      el.innerHTML = `<div style="display:inline-flex;gap:20px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;">
+        <div><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
+        <div><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>
+      </div>`;
+    } else {
+      el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
+    }
+  } catch(e) { el.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+let extraAddrCount = 0;
+const MAX_EXTRA_ADDR = 3;
+
+function addExtraAddr() {
+  if (extraAddrCount >= MAX_EXTRA_ADDR) return;
+  extraAddrCount++;
+  const idx = extraAddrCount;
+  const list = document.getElementById("m-extra-list");
+  const block = document.createElement("div");
+  block.id = "m-extra-" + idx;
+  block.style.cssText = "display:flex;gap:6px;align-items:center;margin-bottom:8px;";
+  block.innerHTML = `
+    <input type="text" id="m-extra-addr-${idx}" placeholder="追加住所 ${idx}（集荷・配達先など）" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 12px;font-family:var(--sans);font-size:.88rem;">
+    <button type="button" onclick="removeExtraAddr(${idx})" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:.8rem;flex-shrink:0;">削除</button>
+  `;
+  list.appendChild(block);
+  if (extraAddrCount >= MAX_EXTRA_ADDR) {
+    document.getElementById("m-extra-add-btn").style.display = "none";
+  }
+}
+
+function removeExtraAddr(idx) {
+  const block = document.getElementById("m-extra-" + idx);
+  if (block) block.remove();
+  extraAddrCount = Math.max(0, extraAddrCount - 1);
+  document.getElementById("m-extra-add-btn").style.display = "inline-flex";
+}
+
+function getExtraAddrs() {
+  const results = [];
+  document.querySelectorAll("#m-extra-list input[type=text]").forEach(el => {
+    const v = el.value.trim();
+    if (v) results.push(v);
+  });
+  return results;
+}
+
+function resetManualForm() {
+  ["m-name","m-tel","m-email","m-pickup","m-delivery","m-cargo","m-note",
+   "m-pickup-house-detail","m-pickup-building-name","m-delivery-house-detail","m-delivery-building-name"]
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  document.getElementById("m-contact").selectedIndex = 0;
+  document.getElementById("m-weight").selectedIndex  = 0;
+  document.getElementById("m-payment").selectedIndex = 0;
+  document.getElementById("m-datetime").value = "";
+  document.querySelectorAll("input[name='m-pickup-type'], input[name='m-delivery-type']")
+    .forEach(r => r.checked = false);
+  ["m-pickup-house","m-pickup-building","m-delivery-house","m-delivery-building"]
+    .forEach(id => document.getElementById(id).style.display = "none");
+  document.getElementById("m-dist-result").innerHTML = "";
+  document.getElementById("m-extra-list").innerHTML = "";
+  extraAddrCount = 0;
+  document.getElementById("m-extra-add-btn").style.display = "inline-flex";
+}
+
+// ══════════════════════════════════════════════════════
+// 手動入力
+// ══════════════════════════════════════════════════════
+async function submitManual() {
+  const name     = document.getElementById("m-name").value.trim();
+  const tel      = document.getElementById("m-tel").value.trim();
+  const pickup   = buildAddressWithType("pickup");
+  const delivery = buildAddressWithType("delivery");
+  const resEl    = document.getElementById("manual-result");
+
+  if (!name || !tel || !pickup || !delivery) {
+    resEl.innerHTML = '<div class="alert alert-error">氏名・電話番号・集荷先・配達先は必須です</div>';
+    return;
+  }
+
+  if (!confirm("配送依頼として登録します。よろしいですか？")) return;
+
+  const dtVal   = document.getElementById("m-datetime").value;
+  const extras  = getExtraAddrs();
+  const noteVal = document.getElementById("m-note").value.trim();
+  const noteStr = [...extras.map((a, i) => `追加住所${i + 1}: ${a}`), noteVal].filter(Boolean).join("\n") || null;
+
+  const row = {
+    name, tel,
+    email:            document.getElementById("m-email").value  || null,
+    contact_method:   document.getElementById("m-contact").value,
+    pickup_address:   pickup,
+    delivery_address: delivery,
+    desired_datetime: dtVal ? new Date(dtVal).toISOString() : null,
+    cargo_info:       document.getElementById("m-cargo").value  || null,
+    weight:           document.getElementById("m-weight").value || null,
+    payment_method:   document.getElementById("m-payment").value || null,
+    note:             noteStr,
+  };
+
+  loading(true);
+  try {
+    const res = await callGas({ action: "insertDelivery", token, row });
+    if (res.ok) {
+      resEl.innerHTML = `<div class="alert alert-success">✅ 配送依頼として登録完了（ID: ${res.id}）</div>`;
+      resetManualForm();
+      await loadDeliveries();
+    } else {
+      resEl.innerHTML = `<div class="alert alert-error">❌ ${res.error}</div>`;
+    }
+  } catch(e) {
+    resEl.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+  } finally { loading(false); }
+}
+
+async function submitManualInquiry() {
+  const resEl = document.getElementById("manual-result");
+  const noteVal = document.getElementById("m-note").value.trim();
+  const row = {
+    name:           document.getElementById("m-name").value.trim()  || null,
+    tel:            document.getElementById("m-tel").value.trim()   || null,
+    email:          document.getElementById("m-email").value.trim() || null,
+    contact_method: document.getElementById("m-contact").value,
+    inquiry_type:   "電話問い合わせ",
+    message:        noteVal || null,
+  };
+
+  if (!confirm("問い合わせとして登録します。よろしいですか？")) return;
+
+  loading(true);
+  try {
+    const res = await callGas({ action: "insertInquiry", token, row });
+    if (res.ok) {
+      resEl.innerHTML = `<div class="alert alert-success">✅ 問い合わせとして登録完了（ID: ${res.id}）</div>`;
+      resetManualForm();
+      await loadInquiries();
+      switchTab("inquiry");
+    } else {
+      resEl.innerHTML = `<div class="alert alert-error">❌ ${res.error}</div>`;
+    }
+  } catch(e) {
+    resEl.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+  } finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// LINE受付
+// ══════════════════════════════════════════════════════
+let lineMessages = [];
+let lineConfirmed = [];
+
+async function loadMessages() {
+  loading(true);
+  try {
+    const res = await callGas({ action: "loadMessages", token });
+    if (!res.ok) { showAlert("line-list", "error", res.error); return; }
+    lineMessages  = res.rows;
+    lineConfirmed = res.confirmed || [];
+    renderMessages();
+  } catch(e) { showAlert("line-list", "error", e.message); }
+  finally { loading(false); }
+}
+
+function parseLineSummary(content) {
+  const lines = (content || "").split("\n").map(l => l.trim()).filter(Boolean);
+  const result = { name: "", date: "", time: "", pickup: "", delivery: "", cargo: "", tel: "" };
+  for (const line of lines) {
+    const item = line.replace(/^●/, "").trim();
+    if (/^[0-9０-９]{1,2}[\/月][0-9０-９]{1,2}/.test(item)) { result.date = item; continue; }
+    if (/[A-Da-d]枠|[0-9]{1,2}時.*[〜~]/.test(item)) { result.time = item; continue; }
+    if (/.+様$/.test(item) && !/\d/.test(item)) { result.name = item; continue; }
+    if (/^0\d{9,10}$/.test(item.replace(/[\s\-]/g,""))) { result.tel = item; continue; }
+    if (/ピック|集荷/.test(item)) { result.pickup = item; continue; }
+    if (/\d{3}-\d{4}|[都道府県市区町村丁目号室]/.test(item)) { result.delivery = (result.delivery ? result.delivery + " " : "") + item; continue; }
+    if (/\d号サイズ|\d号$|[SML]サイズ/.test(item) && item.length < 20) { result.cargo = item; continue; }
+    if (/^\d+円$/.test(item)) { result.price = parseInt(item); continue; }
+  }
+  return result;
+}
+
+function checkConflicts(dateStr, timeStr) {
+  if (!dateStr || !lineConfirmed.length) return [];
+  const year = new Date().getFullYear();
+  const dm = dateStr.match(/(\d{1,2})[\/月](\d{1,2})/);
+  if (!dm) return [];
+  const month = parseInt(dm[1]), day = parseInt(dm[2]);
+  let hour = 0;
+  const tm = timeStr && timeStr.match(/([A-Da-d])枠/i);
+  const slots = {A:9,B:12,C:15,D:17};
+  if (tm) hour = slots[tm[1].toUpperCase()] || 0;
+  else {
+    const hm = timeStr && timeStr.match(/(\d{1,2})時/);
+    if (hm) hour = parseInt(hm[1]);
+  }
+  const newDt = new Date(year, month-1, day, hour);
+  return lineConfirmed.filter(c => {
+    if (!c.desired_datetime) return false;
+    const ex = new Date(c.desired_datetime);
+    return Math.abs(newDt - ex) / 3600000 < 3;
+  });
+}
+
+function renderMessages() {
+  const el = document.getElementById("line-list");
+  if (!lineMessages.length) {
+    el.innerHTML = '<div class="alert alert-info">未処理のLINEメッセージはありません。</div>';
+    return;
+  }
+  el.innerHTML = lineMessages.map(msg => buildMessageCard(msg)).join("");
+}
+
+function buildMessageCard(msg) {
+  const id      = msg.id;
+  const sender  = escHtml(msg.sender_name || "不明");
+  const content = escHtml(msg.content     || "");
+  const created = fmtDt(msg.created_at);
+  const p       = parseLineSummary(msg.content || "");
+  const conflicts = checkConflicts(p.date, p.time);
+
+  const conflictHtml = conflicts.length
+    ? `<div class="alert alert-warn" style="margin:8px 0;font-size:.8rem;">⚠️ 近い案件あり: ${conflicts.map(c => escHtml(c.name||"不明") + " 様").join(", ")}</div>`
+    : `<div class="alert alert-success" style="margin:8px 0;font-size:.78rem;padding:6px 10px;">✅ スケジュール重複なし</div>`;
+
+  const summaryHtml = [
+    p.name     ? `<div class="field-row"><span class="field-label">氏名</span><span class="field-val">${escHtml(p.name)}</span></div>` : "",
+    p.date     ? `<div class="field-row"><span class="field-label">日付</span><span class="field-val">${escHtml(p.date)}</span></div>` : "",
+    p.time     ? `<div class="field-row"><span class="field-label">時間</span><span class="field-val">${escHtml(p.time)}</span></div>` : "",
+    p.pickup   ? `<div class="field-row"><span class="field-label">集荷</span><span class="field-val">${escHtml(p.pickup)}</span></div>` : "",
+    p.delivery ? `<div class="field-row"><span class="field-label">配達先</span><span class="field-val">${escHtml(p.delivery)}</span></div>` : "",
+    p.cargo    ? `<div class="field-row"><span class="field-label">荷物</span><span class="field-val">${escHtml(p.cargo)}</span></div>` : "",
+    p.tel      ? `<div class="field-row"><span class="field-label">電話</span><span class="field-val">${escHtml(p.tel)}</span></div>` : "",
+  ].filter(Boolean).join("");
+
+  return `<div class="card" id="line-card-${id}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-weight:700;font-size:.9rem;">📱 ${sender}</span>
+      <span style="font-size:.75rem;color:var(--text2);">${created}</span>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;
+      font-size:.8rem;white-space:pre-wrap;color:var(--text2);max-height:120px;overflow-y:auto;margin-bottom:10px;">${content}</div>
+    ${summaryHtml ? `<div style="margin-bottom:8px;">${summaryHtml}</div>` : ""}
+    ${conflictHtml}
+    <div id="line-result-${id}"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+      <button class="btn btn-primary" onclick="acceptMsg('${id}')">✅ 受注</button>
+      <button class="btn btn-danger" onclick="showRejectTpl('${id}')">❌ 拒否</button>
+      <button class="btn btn-secondary" onclick="skipMsg('${id}')">⏭ スキップ</button>
+    </div>
+    <div id="reject-tpl-${id}" style="display:none;margin-top:12px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <p style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">拒否テンプレ</p>
+        <div id="tpl-text-${id}" style="font-size:.88rem;color:var(--text);margin-bottom:8px;">お疲れ様です。その日時は受けれません。</div>
+        <button class="btn btn-secondary btn-sm" onclick="copyTpl('${id}')">📋 コピー</button>
+        <span id="copy-done-${id}" style="display:none;font-size:.78rem;color:var(--green);margin-left:8px;">✅ コピーしました</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function acceptMsg(id) {
+  const msg = lineMessages.find(m => m.id === id);
+  if (!msg) return;
+  const p = parseLineSummary(msg.content || "");
+  const year = new Date().getFullYear();
+  const dm = p.date && p.date.match(/(\d{1,2})[\/月](\d{1,2})/);
+  const slots = {A:"09:00",B:"12:00",C:"15:00",D:"17:00"};
+  let desired_datetime = null;
+  if (dm) {
+    const tm = p.time && p.time.match(/([A-Da-d])枠/i);
+    const hm = !tm && p.time && p.time.match(/(\d{1,2})時/);
+    const hhmm = tm ? slots[tm[1].toUpperCase()] : (hm ? `${parseInt(hm[1]).toString().padStart(2,"0")}:00` : "00:00");
+    desired_datetime = new Date(year, parseInt(dm[1])-1, parseInt(dm[2]),
+      parseInt(hhmm.split(":")[0]), parseInt(hhmm.split(":")[1])).toISOString();
+  }
+  const priceNote = p.price ? `[¥${p.price}]` : null;
+  const row = {
+    name:             p.name    || null,
+    tel:              p.tel     || null,
+    pickup_address:   p.pickup  || null,
+    delivery_address: p.delivery|| null,
+    cargo_info:       p.cargo   || null,
+    desired_datetime: desired_datetime,
+    contact_method:   "LINE",
+    note:             priceNote,
+    status:           "確定",
+  };
+  loading(true);
+  try {
+    const res = await callGas({ action: "acceptMessage", token, row, msgId: id });
+    if (res.ok) {
+      document.getElementById("line-result-" + id).innerHTML =
+        `<div class="alert alert-success" style="margin-top:8px;">✅ 受注しました（ID: ${res.id}）</div>`;
+      document.getElementById("line-card-" + id).style.opacity = "0.5";
+      lineMessages = lineMessages.filter(m => m.id !== id);
+      updateUnreadBadges();
+    } else {
+      document.getElementById("line-result-" + id).innerHTML =
+        `<div class="alert alert-error" style="margin-top:8px;">❌ ${escHtml(res.error)}</div>`;
+    }
+  } catch(e) {
+    document.getElementById("line-result-" + id).innerHTML =
+      `<div class="alert alert-error" style="margin-top:8px;">❌ ${escHtml(e.message)}</div>`;
+  } finally { loading(false); }
+}
+
+function showRejectTpl(id) {
+  const el = document.getElementById("reject-tpl-" + id);
+  if (el) el.style.display = "block";
+  rejectMsg(id);
+}
+
+async function rejectMsg(id) {
+  try { await callGas({ action: "rejectMessage", token, msgId: id }); } catch(e) { /* ignore */ }
+  lineMessages = lineMessages.filter(m => m.id !== id);
+}
+
+async function skipMsg(id) {
+  await callGas({ action: "skipMessage", token, msgId: id });
+  lineMessages = lineMessages.filter(m => m.id !== id);
+  renderMessages();
+}
+
+function copyTpl(id) {
+  const text = document.getElementById("tpl-text-" + id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const done = document.getElementById("copy-done-" + id);
+    if (done) { done.style.display = "inline"; setTimeout(() => { done.style.display = "none"; }, 2000); }
+  });
+}
+
+function copyReplyTpl(id) {
+  const el = document.getElementById("reply-tmpl-" + id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const done = document.getElementById("copy-done-reply-" + id);
+    if (done) { done.style.display = "inline"; setTimeout(() => { done.style.display = "none"; }, 2000); }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// 削除（2段階確認）
+// ══════════════════════════════════════════════════════
+function confirmDelete(id) {
+  const el = document.getElementById("del-confirm-" + id);
+  if (el) el.style.display = "block";
+}
+
+function cancelDelete(id) {
+  const el = document.getElementById("del-confirm-" + id);
+  if (el) el.style.display = "none";
+}
+
+async function executeDelete(id) {
+  loading(true);
+  try {
+    const res = await callGas({ action: "deleteRecord", token, id });
+    if (res.ok) {
+      ["acc-","acc-i-","acc-b-"].forEach(p => {
+        const el = document.getElementById(p + id);
+        if (el) el.remove();
+      });
+      deliveryRows  = deliveryRows.filter(r => r.id !== id);
+      inquiryRows   = inquiryRows.filter(r => r.id !== id);
+      confirmedRows = confirmedRows.filter(r => r.id !== id);
+      updateUnreadBadges();
+    } else {
+      alert("削除失敗: " + (res.error || "不明なエラー"));
+    }
+  } catch(e) { alert(e && e.message ? e.message : "通信エラー: " + String(e)); }
+  finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// 業務ボード 確定金額保存
+// ══════════════════════════════════════════════════════
+async function saveAmount(id) {
+  const amount = document.getElementById("amount-" + id).value;
+  const rec = confirmedRows.find(r => r.id === id);
+  if (!rec) return;
+  const baseNote = (rec.note || '').replace(/\s*\[¥\d+\]/, '').trim();
+  const newNote = amount ? (baseNote ? `${baseNote} [¥${amount}]` : `[¥${amount}]`) : baseNote;
+  loading(true);
+  try {
+    const res = await callGas({ action: "updateNote", token, id, note: newNote });
+    if (res.ok) {
+      rec.note = newNote;
+      const el = document.getElementById("amount-result-" + id);
+      if (el) {
+        el.innerHTML = '<div class="alert alert-success" style="padding:6px 10px;font-size:.78rem;">✅ 保存しました</div>';
+        setTimeout(() => { if (el) el.innerHTML = ""; }, 3000);
+      }
+    } else {
+      alert("保存失敗: " + (res.error || "不明なエラー"));
+    }
+  } catch(e) { alert(e.message); }
+  finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// アコーディオン
+// ══════════════════════════════════════════════════════
+function toggleAcc(id) {
+  const el = document.getElementById("acc-" + id);
+  if (el) el.classList.toggle("open");
+}
+
+// ══════════════════════════════════════════════════════
+// 他業務管理
+// ══════════════════════════════════════════════════════
+let otherWorkRows = [];
+let otherTabInitialized = false;
+
+// 時間セレクトを初期化（時・分 別々、分は5分刻み）
+function populateTimeSelects() {
+  const hours   = Array.from({length: 24}, (_, i) => String(i).padStart(2, "0"));
+  const minutes = ["00","05","10","15","20","25","30","35","40","45","50","55"];
+
+  ["ow-pickup-h","ow-end-h"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = hours.map(h => `<option value="${h}">${h}</option>`).join("");
+  });
+  ["ow-pickup-m","ow-end-m"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = minutes.map(m => `<option value="${m}">${m}</option>`).join("");
+  });
+
+  // デフォルト: 集荷09:00 / 終了12:00
+  const ph = document.getElementById("ow-pickup-h"); if (ph) ph.value = "09";
+  const pm = document.getElementById("ow-pickup-m"); if (pm) pm.value = "00";
+  const eh = document.getElementById("ow-end-h");    if (eh) eh.value = "12";
+  const em = document.getElementById("ow-end-m");    if (em) em.value = "00";
+}
+
+// 時間セレクト（時・分）から "HH:MM" を組み立てる
+function getOwPickupTime() {
+  const h = document.getElementById("ow-pickup-h");
+  const m = document.getElementById("ow-pickup-m");
+  return (h && m) ? h.value + ":" + m.value : "";
+}
+function getOwEndTime() {
+  const h = document.getElementById("ow-end-h");
+  const m = document.getElementById("ow-end-m");
+  return (h && m) ? h.value + ":" + m.value : "";
+}
+
+function initOtherTab() {
+  if (!otherTabInitialized) {
+    populateTimeSelects();
+    // 今日の日付をデフォルト
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm   = String(today.getMonth() + 1).padStart(2, "0");
+    const dd   = String(today.getDate()).padStart(2, "0");
+    const dateEl = document.getElementById("ow-date");
+    if (dateEl) dateEl.value = `${yyyy}-${mm}-${dd}`;
+    otherTabInitialized = true;
+    onOtherClientChange(); // 初期状態で集荷先を連動させる
+  }
+}
+
+function switchOtherSub(sub) {
+  const isInput = sub === "input";
+  document.getElementById("other-sub-input").style.display = isInput ? "block" : "none";
+  document.getElementById("other-sub-list").style.display  = isInput ? "none"  : "block";
+
+  const inputBtn = document.getElementById("other-sub-input-btn");
+  const listBtn  = document.getElementById("other-sub-list-btn");
+  if (inputBtn) {
+    inputBtn.style.background    = isInput ? "var(--accent)" : "var(--surface2)";
+    inputBtn.style.color         = isInput ? "#fff" : "var(--text)";
+    inputBtn.style.borderColor   = isInput ? "var(--accent)" : "var(--border)";
+  }
+  if (listBtn) {
+    listBtn.style.background  = !isInput ? "var(--accent)" : "var(--surface2)";
+    listBtn.style.color       = !isInput ? "#fff" : "var(--text)";
+    listBtn.style.borderColor = !isInput ? "var(--accent)" : "var(--border)";
+  }
+
+  if (!isInput) loadOtherWorks();
+}
+
+function onOtherClientChange() {
+  const val  = document.getElementById("ow-client").value;
+  const wrap = document.getElementById("ow-client-custom-wrap");
+  if (wrap) wrap.style.display = val === "その他" ? "block" : "none";
+
+  const pickupSel       = document.getElementById("ow-pickup-loc");
+  const pickupLabel     = pickupSel ? pickupSel.closest(".form-group").querySelector("label") : null;
+  const pickupCustomWrap= document.getElementById("ow-pickup-loc-custom-wrap");
+  const pickupCustomLabel = pickupCustomWrap ? pickupCustomWrap.querySelector("label") : null;
+
+  // 集荷先プルダウンの選択肢と表示を切り替える
+  const FLEX_OPTS  = [["北広島Flex","北広島Flex"],["雁来Flex","雁来Flex"]];
+  const FRESH_OPTS = [["澄川Fresh","澄川Fresh"],["北24条Fresh","北24条Fresh"]];
+  const ALL_OPTS   = [
+    ["北広島Flex","北広島Flex"],["雁来Flex","雁来Flex"],
+    ["澄川Fresh","澄川Fresh"],["北24条Fresh","北24条Fresh"],
+    ["自由入力","自由入力"]
+  ];
+
+  if (val === "ハコベル") {
+    // プルダウン非表示 → テキスト入力を表示
+    if (pickupSel) pickupSel.closest(".form-group").style.display = "none";
+    if (pickupCustomWrap) pickupCustomWrap.style.display = "block";
+    if (pickupLabel) pickupLabel.textContent = "集荷先";
+    if (pickupCustomLabel) pickupCustomLabel.textContent = "集荷先（自由入力）";
+    document.getElementById("ow-pickup-loc-custom").placeholder = "集荷先を入力";
+  } else {
+    // プルダウン表示、テキスト非表示
+    if (pickupSel) pickupSel.closest(".form-group").style.display = "block";
+    if (pickupCustomWrap) pickupCustomWrap.style.display = "none";
+
+    let opts;
+    if (val === "Flex")  opts = FLEX_OPTS;
+    else if (val === "Fresh") opts = FRESH_OPTS;
+    else opts = ALL_OPTS;
+
+    if (pickupSel) {
+      pickupSel.innerHTML = opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+      pickupSel.selectedIndex = 0;
+    }
+  }
+}
+
+function onOtherPickupChange() {
+  const val  = document.getElementById("ow-pickup-loc").value;
+  const wrap = document.getElementById("ow-pickup-loc-custom-wrap");
+  if (wrap) wrap.style.display = val === "自由入力" ? "block" : "none";
+}
+
+function calcWorkHours(pickupTime, endTime) {
+  if (!pickupTime || !endTime) return null;
+  const [ph, pm] = pickupTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  const mins = (eh * 60 + em) - (ph * 60 + pm);
+  if (mins <= 0) return null;
+  return Math.round(mins / 60 * 100) / 100;
+}
+
+async function submitOtherWork() {
+  const resEl = document.getElementById("other-input-result");
+
+  const clientSel    = document.getElementById("ow-client").value;
+  const clientCustom = document.getElementById("ow-client-custom").value.trim();
+  const clientName   = clientSel === "その他" ? clientCustom : clientSel;
+
+  const workDate     = document.getElementById("ow-date").value;
+  const pickupTime   = getOwPickupTime();
+  const endTime      = getOwEndTime();
+
+  const pickupLocSel    = document.getElementById("ow-pickup-loc").value;
+  const pickupLocCustom = document.getElementById("ow-pickup-loc-custom").value.trim();
+  // ハコベルはプルダウン非表示でカスタム入力を使う
+  const pickupLocation  = (clientSel === "ハコベル" || pickupLocSel === "自由入力") ? pickupLocCustom : pickupLocSel;
+
+  const deliveryLocation = document.getElementById("ow-delivery-loc").value.trim();
+  const amount           = parseInt(document.getElementById("ow-amount").value) || 0;
+  const memo             = document.getElementById("ow-memo").value.trim() || null;
+
+  if (!clientName) {
+    resEl.innerHTML = '<div class="alert alert-error">クライアント名を入力してください</div>';
+    return;
+  }
+  if (!workDate) {
+    resEl.innerHTML = '<div class="alert alert-error">日付は必須です</div>';
+    return;
+  }
+
+  if (!confirm("業務を確定して登録します。よろしいですか？")) return;
+
+  const workHours = calcWorkHours(pickupTime, endTime);
+
+  const row = {
+    client_name:       clientName,
+    work_date:         workDate,
+    pickup_time:       pickupTime   || null,
+    end_time:          endTime      || null,
+    work_hours:        workHours,
+    pickup_location:   pickupLocation   || null,
+    delivery_location: deliveryLocation || null,
+    amount:            amount,
+    memo:              memo,
+  };
+
+  loading(true);
+  try {
+    const res = await callGas({ action: "insertOtherWork", token, row });
+    if (res.ok) {
+      const calMsg = res.calError
+        ? `<br><small style="color:var(--yellow);">⚠️ カレンダー登録失敗: ${escHtml(res.calError)}</small>`
+        : `<br><small style="color:var(--green);">📅 カレンダー登録成功</small>`;
+      resEl.innerHTML = `<div class="alert alert-success">✅ 登録完了（ID: ${res.id}）${calMsg}</div>`;
+      // フォームリセット
+      document.getElementById("ow-client").selectedIndex = 0;
+      document.getElementById("ow-client-custom").value  = "";
+      document.getElementById("ow-client-custom-wrap").style.display = "none";
+      document.getElementById("ow-date").value            = "";
+      populateTimeSelects();
+      document.getElementById("ow-pickup-loc").selectedIndex = 0;
+      document.getElementById("ow-pickup-loc-custom").value  = "";
+      document.getElementById("ow-pickup-loc-custom-wrap").style.display = "none";
+      document.getElementById("ow-delivery-loc").value = "";
+      document.getElementById("ow-amount").value        = "";
+      document.getElementById("ow-memo").value          = "";
+      setTimeout(() => { switchTab("board"); }, 800);
+    } else {
+      resEl.innerHTML = `<div class="alert alert-error">❌ ${escHtml(res.error)}</div>`;
+    }
+  } catch(e) {
+    resEl.innerHTML = `<div class="alert alert-error">❌ ${escHtml(e.message)}</div>`;
+  } finally { loading(false); }
+}
+
+async function loadOtherWorks() {
+  loading(true);
+  try {
+    const res = await callGas({ action: "loadOtherWorks", token });
+    if (!res.ok) { showAlert("other-works-list", "error", res.error); return; }
+    otherWorkRows = res.rows;
+    renderOtherWorks();
+  } catch(e) { showAlert("other-works-list", "error", e.message); }
+  finally { loading(false); }
+}
+
+function renderOtherWorks() {
+  const el = document.getElementById("other-works-list");
+  if (!otherWorkRows.length) {
+    el.innerHTML = '<div class="alert alert-info">登録された他業務はありません。</div>';
+    return;
+  }
+  el.innerHTML = otherWorkRows.map(r => buildOtherWorkCard(r)).join("");
+}
+
+function buildOtherWorkCard(rec) {
+  const hoursStr = rec.work_hours != null ? rec.work_hours + " h" : "—";
+  const amountStr = rec.amount != null ? "¥" + Number(rec.amount).toLocaleString() : "—";
+  const dateStr   = rec.work_date ? rec.work_date.slice(0, 10) : "—";
+  const timeStr   = (rec.pickup_time && rec.end_time)
+    ? rec.pickup_time + " 〜 " + rec.end_time
+    : (rec.pickup_time || rec.end_time || "—");
+
+  return `<div class="card" style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-weight:700;font-size:.95rem;">📦 ${escHtml(rec.client_name || "—")}</span>
+      <span style="font-size:.78rem;color:var(--text2);">${escHtml(dateStr)}</span>
+    </div>
+    <div class="cols-2">
+      <div>
+        ${fieldRow("時間", timeStr)}
+        ${fieldRow("稼働時間", hoursStr)}
+        ${fieldRow("集荷先", rec.pickup_location || "—")}
+        ${fieldRow("配達先", rec.delivery_location || "—")}
+      </div>
+      <div>
+        <div class="metric" style="margin-bottom:8px;">
+          <div class="metric-label">金額</div>
+          <div class="metric-val">${escHtml(amountStr)}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">稼働</div>
+          <div class="metric-val">${escHtml(hoursStr)}</div>
+        </div>
+      </div>
+    </div>
+    ${rec.memo ? `<div style="margin-top:8px;font-size:.82rem;color:var(--text2);background:var(--surface2);border-radius:6px;padding:8px;">📝 ${escHtml(rec.memo)}</div>` : ""}
+  </div>`;
+}
+
+function buildOtherWorkBoardCard(rec) {
+  const uid       = "ow-" + (rec.id || Math.random().toString(36).slice(2));
+  const dateStr   = rec.work_date ? rec.work_date.slice(0, 10) : "—";
+  const pickupT   = rec.pickup_time  || "";
+  const endT      = rec.end_time     || "";
+  const timeRange = (pickupT && endT) ? `${pickupT}〜${endT}` : (pickupT || endT || "—");
+  const hoursStr  = rec.work_hours != null ? rec.work_hours + " h" : "—";
+  const amountStr = rec.amount != null ? "¥" + Number(rec.amount).toLocaleString() : "—";
+
+  return `<div class="accordion" id="acc-${uid}">
+    <div class="acc-header" onclick="toggleAcc('${uid}')">
+      <div class="acc-title">📦 ${escHtml(rec.client_name || "—")}　${escHtml(dateStr)} ${escHtml(timeRange)}</div>
+      <span class="acc-arrow">▼</span>
+    </div>
+    <div class="acc-body">
+      <div style="margin-top:10px;">
+        ${fieldRow("集荷先",   rec.pickup_location   || "—")}
+        ${fieldRow("配達先",   rec.delivery_location || "—")}
+        ${fieldRow("金額",     amountStr)}
+        ${fieldRow("稼働時間", hoursStr)}
+        ${rec.memo ? `<div style="margin-top:8px;font-size:.82rem;color:var(--text2);background:var(--surface2);border-radius:6px;padding:8px;">📝 ${escHtml(rec.memo)}</div>` : ""}
+      </div>
+      <hr class="section-sep">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="completeOtherWork('${rec.id}')">✅ 完了</button>
+        <button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;" onclick="confirmDeleteOW('${rec.id}')">🗑 削除</button>
+      </div>
+      <div id="del-ow-confirm-${rec.id}" style="display:none;margin-top:8px;padding:10px;background:rgba(240,91,91,.1);border:1px solid var(--red);border-radius:8px;font-size:.85rem;">
+        本当に削除しますか？
+        <button class="btn btn-danger btn-sm" style="margin-left:8px;" onclick="executeDeleteOW('${rec.id}')">削除する</button>
+        <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="cancelDeleteOW('${rec.id}')">キャンセル</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// 他業務 削除（業務ボード）
+// ══════════════════════════════════════════════════════
+async function completeOtherWork(id) {
+  loading(true);
+  try {
+    const res = await callGas({ action: "completeOtherWork", token, id });
+    if (res.ok) {
+      const uid = "ow-" + id;
+      const el = document.getElementById("acc-" + uid);
+      if (el) el.remove();
+      otherWorkRows = otherWorkRows.filter(r => r.id !== id);
+    } else {
+      alert("完了更新失敗: " + (res.error || "不明なエラー"));
+    }
+  } catch(e) { alert(e && e.message ? e.message : "通信エラー: " + String(e)); }
+  finally { loading(false); }
+}
+
+function confirmDeleteOW(id) {
+  const el = document.getElementById("del-ow-confirm-" + id);
+  if (el) el.style.display = "block";
+}
+
+function cancelDeleteOW(id) {
+  const el = document.getElementById("del-ow-confirm-" + id);
+  if (el) el.style.display = "none";
+}
+
+async function executeDeleteOW(id) {
+  loading(true);
+  try {
+    const res = await callGas({ action: "deleteOtherWork", token, id });
+    if (res.ok) {
+      const uid = "ow-" + id;
+      const el = document.getElementById("acc-" + uid);
+      if (el) el.remove();
+      otherWorkRows = otherWorkRows.filter(r => r.id !== id);
+    } else {
+      alert("削除失敗: " + (res.error || "不明なエラー"));
+    }
+  } catch(e) { alert(e && e.message ? e.message : "通信エラー: " + String(e)); }
+  finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// アラート表示
+// ══════════════════════════════════════════════════════
+function showAlert(containerId, type, msg) {
+  const el = document.getElementById(containerId);
+  if (el) el.innerHTML = `<div class="alert alert-${type}">${escHtml(msg)}</div>`;
+}
+</script>
+</body>
+</html>
