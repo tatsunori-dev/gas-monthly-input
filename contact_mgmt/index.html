@@ -885,15 +885,75 @@ function routeLink(a, b) {
 }
 
 function calcPrice(km, opts) {
+  return calcEstimate(km, opts).total;
+}
+
+function calcEstimate(km, opts) {
   opts = opts || [];
   let base = 0;
   const rates = [[5,1500],[10,2500],[20,3500],[30,4500],[999,5000]];
   for (const [max, rate] of rates) { if (km <= max) { base = rate; break; } }
   if (km > 30) base = 5000 + Math.floor((km - 30) * 100);
-  const OPTIONS = {"重量物（30〜50kg）":500,"重量物（50kg超）":0};
-  let optTotal = 0;
-  opts.forEach(o => { if (OPTIONS[o] !== undefined) optTotal += OPTIONS[o]; });
-  return base + optTotal;
+  const OPTIONS = {
+    "夜間（20〜22時）": 1500, "深夜（22〜24時）": 3000,
+    "時間指定（その他）": 1000,
+    "重量物（30〜50kg）": 500, "重量物（50kg超）": 0,
+    "積み置き（1日）": 1500
+  };
+  const optAmounts = {};
+  opts.forEach(o => { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
+  const total = base + Object.values(optAmounts).reduce((s, v) => s + v, 0);
+  const note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
+  return { base, optAmounts, total, note };
+}
+
+function getOptsFromRecord(rec) {
+  const opts = [];
+  if (rec.weight === "heavy1") opts.push("重量物（30〜50kg）");
+  if (rec.weight === "heavy2") opts.push("重量物（50kg超）");
+  const dt = rec.desired_datetime ? new Date(rec.desired_datetime) : null;
+  if (dt) {
+    const h = dt.getHours();
+    if (h >= 22) opts.push("深夜（22〜24時）");
+    else if (h >= 20) opts.push("夜間（20〜22時）");
+  }
+  return opts;
+}
+
+async function showEstimate(id) {
+  const rec = deliveryRows.find(r => r.id === id);
+  if (!rec) return;
+  const pickup   = rec.pickup_address   || "";
+  const delivery = rec.delivery_address || "";
+  const loadingEl = document.getElementById("estimate-loading-" + id);
+  if (loadingEl) loadingEl.style.display = "block";
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (!res.ok || res.dist == null) { alert("距離を取得できませんでした"); return; }
+    const km = res.dist;
+    distCache[id] = km;
+    const opts = getOptsFromRecord(rec);
+    const est  = calcEstimate(km, opts);
+    // モーダル表示
+    const rows = [["基本料金（" + km + " km）", est.base]];
+    Object.entries(est.optAmounts).forEach(([k, v]) => rows.push([k, v]));
+    rows.push(["合計", est.total]);
+    const tableHtml = rows.map((r, i) => {
+      const isTot = i === rows.length - 1;
+      return `<div style="display:flex;justify-content:space-between;padding:6px 0;${isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);'}">`
+        + `<span>${r[0]}</span><span>¥${r[1].toLocaleString()}</span></div>`;
+    }).join("");
+    const noteHtml = est.note ? `<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">${est.note}</p>` : "";
+    document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
+    document.getElementById("estimate-modal").style.display = "flex";
+    // テンプレ自動反映
+    const tmplEl = document.getElementById("reply-tmpl-" + id);
+    if (tmplEl) {
+      const priceStr = "¥" + est.total.toLocaleString();
+      tmplEl.value = tmplEl.value.replace(/概算料金は .+? となります/, "概算料金は " + priceStr + " となります");
+    }
+  } catch(e) { alert("エラー: " + e.message); }
+  finally { if (loadingEl) loadingEl.style.display = "none"; }
 }
 
 function buildReplyTemplate(rec, formType) {
@@ -974,20 +1034,22 @@ function buildDeliveryCard(rec) {
       <div class="template-box">${escHtml(template)}</div>
       ${tel ? `<a class="tel-link" href="tel:${escHtml(tel)}">📞 ${escHtml(tel)} に発信</a>` : ""}`;
   } else if (contactMethod.includes("メール") || contactMethod.toLowerCase().includes("email")) {
-    const mailHref = `mailto:${encodeURIComponent(rec.email||'')}`
+    const mailHref = `mailto:${rec.email||''}`
       + `?subject=${encodeURIComponent('【TEMC】配送依頼のご回答')}`
       + `&body=${encodeURIComponent(template)}`;
     contactHtml = `<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">📧 メール</p>
       <textarea id="reply-tmpl-${id}" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>
-      <div style="margin-top:6px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
         ${rec.email ? `<a class="btn btn-secondary btn-sm" href="${mailHref}">📧 メールを開く</a>` : '<span style="font-size:.8rem;color:var(--text3);">メールアドレス未入力</span>'}
+        ${rec.tel ? `<a class="btn btn-secondary btn-sm" href="tel:${escHtml(rec.tel)}">📞 電話</a>` : ''}
       </div>`;
   } else if (contactMethod.toLowerCase().includes("line")) {
     contactHtml = `<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">💬 LINE</p>
       <textarea id="reply-tmpl-${id}" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>
-      <div style="display:flex;gap:8px;margin-top:6px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
         <button class="btn btn-secondary btn-sm" onclick="copyReplyTpl(${id})">📋 コピー</button>
         <a class="btn btn-secondary btn-sm" href="https://chat.line.biz/" target="_blank">💬 LINEを開く</a>
+        ${rec.tel ? `<a class="btn btn-secondary btn-sm" href="tel:${escHtml(rec.tel)}">📞 電話</a>` : ''}
       </div>
       <span id="copy-done-reply-${id}" style="display:none;font-size:.78rem;color:var(--green);margin-top:4px;">✅ コピーしました</span>`;
   }
@@ -1016,10 +1078,11 @@ function buildDeliveryCard(rec) {
           ${fieldRow("備考", rec.note)}
         </div>
         <div>
-          <p class="card-title" style="margin-bottom:8px;">距離・料金</p>
-          <div id="dist-${id}">
+          <p class="card-title" style="margin-bottom:8px;">見積もり</p>
+          <div style="margin-bottom:4px;">
             ${pickup && delivery
-              ? `<button class="btn btn-secondary btn-sm" onclick="fetchDist(${id},'${escHtml(pickup)}','${escHtml(delivery)}')">📏 距離を計算</button>`
+              ? `<button class="btn btn-secondary btn-sm" onclick="showEstimate(${id})">💴 見積もりを出す</button>
+                 <div id="estimate-loading-${id}" style="display:none;font-size:.78rem;color:var(--text3);margin-top:4px;">計算中...</div>`
               : `<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>`}
           </div>
           <hr class="section-sep" style="margin:12px 0;">
@@ -2326,5 +2389,13 @@ function showAlert(containerId, type, msg) {
   if (el) el.innerHTML = `<div class="alert alert-${type}">${escHtml(msg)}</div>`;
 }
 </script>
+<!-- 見積もりモーダル -->
+<div id="estimate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;" onclick="document.getElementById('estimate-modal').style.display='none'">
+  <div style="background:var(--card);border-radius:14px;padding:20px 18px;width:90%;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4);" onclick="event.stopPropagation()">
+    <p style="font-weight:700;font-size:1rem;margin-bottom:12px;">💴 見積もり内訳</p>
+    <div id="estimate-modal-content"></div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:14px;" onclick="document.getElementById('estimate-modal').style.display='none'">閉じる</button>
+  </div>
+</div>
 </body>
 </html>
