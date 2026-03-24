@@ -962,9 +962,9 @@ function buildReplyTemplate(rec, formType) {
   if (formType === "delivery") {
     const distKm = distCache[rec.id];
     const priceStr = distKm ? "¥" + calcPrice(distKm).toLocaleString() : "（後ほど連絡）";
-    return `${name} 様\n\nこの度はTEMCへのご依頼、ありがとうございます。\n\n配送依頼を確認いたしました。\n概算料金は ${priceStr} となります。\n\nご確認いただけましたら、お振込先をご案内いたします。\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 080-XXXX-XXXX`;
+    return `${name} 様\n\nこの度はTEMCへのご依頼、ありがとうございます。\n\n配送依頼を確認いたしました。\n概算料金は ${priceStr} となります。\n\nご確認いただけましたら、お振込先をご案内いたします。\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 090-5780-6059`;
   } else {
-    return `${name} 様\n\nこの度はTEMCへのお問い合わせ、ありがとうございます。\n\n${inquiry}の件、確認いたしました。\n担当者より改めてご連絡いたします。\n\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 080-XXXX-XXXX`;
+    return `${name} 様\n\nこの度はTEMCへのお問い合わせ、ありがとうございます。\n\n${inquiry}の件、確認いたしました。\n担当者より改めてご連絡いたします。\n\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 090-5780-6059`;
   }
 }
 
@@ -1034,11 +1034,8 @@ function buildDeliveryCard(rec) {
       + '<div class="template-box">' + escHtml(template) + '</div>'
       + (tel ? '<a class="tel-link" href="tel:' + escHtml(tel) + '">📞 ' + escHtml(tel) + ' に発信</a>' : '');
   } else if (contactMethod.includes("メール") || contactMethod.toLowerCase().includes("email")) {
-    var mailSubj = encodeURIComponent("【TEMC】配送依頼のご回答");
-    var mailBody = encodeURIComponent(template);
-    var mailHref = "mailto:" + (rec.email||"") + "?subject=" + mailSubj + "&body=" + mailBody;
     var mailBtn = rec.email
-      ? '<a class="btn btn-secondary btn-sm" href="' + mailHref + '">📧 メールを開く</a>'
+      ? '<button class="btn btn-secondary btn-sm" onclick="openMail(' + id + ')">📧 メールを開く</button>'
       : '<span style="font-size:.8rem;color:var(--text3);">メールアドレス未入力</span>';
     var telBtnM = rec.tel
       ? '<a class="btn btn-secondary btn-sm" href="tel:' + escHtml(rec.tel) + '">📞 電話</a>'
@@ -1979,6 +1976,15 @@ function copyReplyTpl(id) {
     const done = document.getElementById("copy-done-reply-" + id);
     if (done) { done.style.display = "inline"; setTimeout(() => { done.style.display = "none"; }, 2000); }
   });
+}
+
+function openMail(id) {
+  const rec = deliveryRows.find(r => r.id === id);
+  if (!rec || !rec.email) return;
+  const tmpl = document.getElementById("reply-tmpl-" + id);
+  const body = tmpl ? tmpl.value : buildReplyTemplate(rec, "delivery");
+  const subj = encodeURIComponent("【TEMC】配送依頼のご回答");
+  window.location.href = "mailto:" + rec.email + "?subject=" + subj + "&body=" + encodeURIComponent(body);
 }
 
 // ══════════════════════════════════════════════════════
