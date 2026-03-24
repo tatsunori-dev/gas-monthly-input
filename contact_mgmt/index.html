@@ -1030,9 +1030,9 @@ function buildDeliveryCard(rec) {
 
   let contactHtml = "";
   if (contactMethod.includes("電話") || contactMethod === "phone") {
-    contactHtml = `<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">📞 電話</p>
-      <div class="template-box">${escHtml(template)}</div>
-      ${tel ? `<a class="tel-link" href="tel:${escHtml(tel)}">📞 ${escHtml(tel)} に発信</a>` : ""}`;
+    contactHtml = '<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">📞 電話</p>'
+      + '<div class="template-box">' + escHtml(template) + '</div>'
+      + (tel ? '<a class="tel-link" href="tel:' + escHtml(tel) + '">📞 ' + escHtml(tel) + ' に発信</a>' : '');
   } else if (contactMethod.includes("メール") || contactMethod.toLowerCase().includes("email")) {
     var mailSubj = encodeURIComponent("【TEMC】配送依頼のご回答");
     var mailBody = encodeURIComponent(template);
@@ -1062,6 +1062,13 @@ function buildDeliveryCard(rec) {
       + '<span id="copy-done-reply-' + id + '" style="display:none;font-size:.78rem;color:var(--green);margin-top:4px;">✅ コピーしました</span>';
   }
 
+  var routeLinkHtml = (pickup && delivery)
+    ? '<p style="margin:6px 0;font-size:.82rem;"><a href="' + routeLink(pickup,delivery) + '" target="_blank" style="color:var(--accent);">🗺️ 経路を見る</a></p>'
+    : '';
+  var estimateBtnHtml = (pickup && delivery)
+    ? '<button class="btn btn-secondary btn-sm" onclick="showEstimate(' + id + ')">💴 見積もりを出す</button><div id="estimate-loading-' + id + '" style="display:none;font-size:.78rem;color:var(--text3);margin-top:4px;">計算中...</div>'
+    : '<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>';
+
   return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-${id}">
     <div class="acc-header" onclick="toggleAcc('${id}')">
       <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")} 様 　📅 ${fmtDt(rec.desired_datetime)}</div>
@@ -1078,7 +1085,7 @@ function buildDeliveryCard(rec) {
           <hr class="section-sep">
           ${addrRow("集荷先", rec.pickup_address)}
           ${addrRow("配達先", rec.delivery_address)}
-          ${pickup && delivery ? `<p style="margin:6px 0;font-size:.82rem;"><a href="${routeLink(pickup,delivery)}" target="_blank" style="color:var(--accent);">🗺️ 経路を見る</a></p>` : ""}
+          ${routeLinkHtml}
           ${fieldRow("希望日時", fmtDt(rec.desired_datetime))}
           ${fieldRow("荷物内容", rec.cargo_info)}
           ${fieldRow("重量", rec.weight)}
@@ -1088,10 +1095,7 @@ function buildDeliveryCard(rec) {
         <div>
           <p class="card-title" style="margin-bottom:8px;">見積もり</p>
           <div style="margin-bottom:4px;">
-            ${pickup && delivery
-              ? `<button class="btn btn-secondary btn-sm" onclick="showEstimate(${id})">💴 見積もりを出す</button>
-                 <div id="estimate-loading-${id}" style="display:none;font-size:.78rem;color:var(--text3);margin-top:4px;">計算中...</div>`
-              : `<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>`}
+            ${estimateBtnHtml}
           </div>
           <hr class="section-sep" style="margin:12px 0;">
           <p class="card-title" style="margin-bottom:8px;">見積もり返信</p>
@@ -1201,8 +1205,8 @@ function buildInquiryCard(rec) {
 
   let contactHtml = "";
   if (contactMethod.includes("電話") || contactMethod === "phone") {
-    contactHtml = `<div class="template-box">${escHtml(template)}</div>
-      ${tel ? `<a class="tel-link" href="tel:${escHtml(tel)}">📞 ${escHtml(tel)} に発信</a>` : ""}`;
+    contactHtml = '<div class="template-box">' + escHtml(template) + '</div>'
+      + (tel ? '<a class="tel-link" href="tel:' + escHtml(tel) + '">📞 ' + escHtml(tel) + ' に発信</a>' : '');
   } else {
     contactHtml = `<textarea style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>`;
   }
