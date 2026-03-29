@@ -2048,7 +2048,7 @@ function switchReplyTmpl(id, val, name) {
   if (val === 'bank') {
     el.value = name + ' 様\n\nお振込先をご案内いたします。\n\n【クレジットカード・PayPayでのお支払い】\n以下のリンクよりお手続きください。\nhttps://buy.stripe.com/cNicN48to5212Wv8fH0gw00\n\n【銀行振込でのお支払い】\n▼ 三井住友銀行\n　札幌支店（301）\n　口座番号：8078971\n　名義：マツモトタツノリ\n\n▼ ゆうちょ銀行\n　〇九八支店（098）\n　口座番号：5746881\n　名義：マツモトタツノリ\n\n※ お振込の際は、申し込み時と同じお名前・電話番号をご入力ください。\n\nご不明な点はお気軽にご連絡ください。\nTEMC / 090-5780-6059';
   } else {
-    var rec = deliveryRows.find(function(r) { return r.id === id; });
+    var rec = deliveryRows.find(function(r) { return String(r.id) === String(id); });
     if (rec) el.value = buildReplyTemplate(rec, 'delivery');
   }
 }
@@ -2062,13 +2062,27 @@ function copyReplyTpl(id) {
   });
 }
 
+function copyMailAddr(email, btn) {
+  navigator.clipboard.writeText(email).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = "✅ コピーしました";
+    setTimeout(function() { btn.textContent = orig; }, 2000);
+  });
+}
+
 function openMail(id) {
-  const rec = deliveryRows.find(r => r.id === id);
+  const rec = deliveryRows.find(r => String(r.id) === String(id));
   if (!rec || !rec.email) return;
   const tmpl = document.getElementById("reply-tmpl-" + id);
   const body = tmpl ? tmpl.value : buildReplyTemplate(rec, "delivery");
   const subj = encodeURIComponent("【TEMC】配送依頼のご回答");
-  window.location.href = "mailto:" + rec.email + "?subject=" + subj + "&body=" + encodeURIComponent(body);
+  const href = "mailto:" + rec.email + "?subject=" + subj + "&body=" + encodeURIComponent(body);
+  const a = document.createElement("a");
+  a.href = href;
+  a.target = "_top";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 // ══════════════════════════════════════════════════════
