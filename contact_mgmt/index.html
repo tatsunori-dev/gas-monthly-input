@@ -1357,7 +1357,8 @@ function buildBoardCard(rec) {
         <div id="memo-result-b-${id}" style="margin-top:6px;"></div>
       </div>
       <hr class="section-sep">
-      <div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="archiveBoardItem(${id})">&#x2705; 完了</button>
         <button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;" onclick="confirmDelete(${id})">🗑 削除</button>
         <div id="del-confirm-${id}" style="display:none;margin-top:8px;padding:10px;background:rgba(240,91,91,.1);border:1px solid var(--red);border-radius:8px;font-size:.85rem;">
           本当に削除しますか？
@@ -2059,6 +2060,23 @@ async function saveAmount(id) {
     }
   } catch(e) { alert(e.message); }
   finally { loading(false); }
+}
+
+// ══════════════════════════════════════════════════════
+// 業務ボード 完了アーカイブ
+// ══════════════════════════════════════════════════════
+async function archiveBoardItem(id) {
+  if (!confirm('完了にしますか？')) return;
+  try {
+    const res = await callGas({ action: 'archiveBoardItem', id: id, token: token });
+    if (res.ok) {
+      loadConfirmed();
+    } else {
+      alert('エラー: ' + (res.error || '完了処理に失敗しました'));
+    }
+  } catch(e) {
+    alert('通信エラー: ' + e.message);
+  }
 }
 
 // ══════════════════════════════════════════════════════

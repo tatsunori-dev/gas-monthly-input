@@ -65,6 +65,7 @@ function dispatch(action, body) {
     case "completeAndArchiveInquiry": return actionCompleteAndArchiveInquiry(body);
     case "archiveInquiry":          return actionArchiveInquiry(body);
     case "unarchiveInquiry":        return actionUnarchiveInquiry(body);
+    case "archiveBoardItem":        return archiveBoardItem(body);
     case "getBanner":               return actionGetBanner();
     case "setBanner":               return actionSetBanner(body);
     default: return { ok: false, error: "unknown action: " + action };
@@ -209,6 +210,7 @@ function actionLoadConfirmed() {
     select: "*",
     form_type: "eq.delivery",
     status: "eq.確定",
+    "is_archived": "not.is.true",
     order: "desired_datetime.asc.nullslast"
   });
   if (!Array.isArray(rows)) throw new Error("DB取得失敗");
@@ -828,6 +830,23 @@ function actionSendReceipt(body) {
     { htmlBody: html, name: "TEMC" }
   );
   return { ok: true, receiptNo };
+}
+
+// ─── 業務ボード アーカイブ ────────────────────────────────────
+
+function archiveBoardItem(params) {
+  var id = params.id;
+  var url = SUPABASE_URL + "/rest/v1/contact_requests?id=eq." + id;
+  var res = UrlFetchApp.fetch(url, {
+    method: "PATCH",
+    headers: sbHeaders({ "Prefer": "return=minimal" }),
+    payload: JSON.stringify({ is_archived: true }),
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() >= 400) {
+    return { ok: false, error: res.getContentText() };
+  }
+  return { ok: true };
 }
 
 // ─── Gmail通知（新着時） ──────────────────────────────────────
