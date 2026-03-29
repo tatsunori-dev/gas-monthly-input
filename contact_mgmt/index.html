@@ -1208,8 +1208,20 @@ function buildInquiryCard(rec) {
   if (contactMethod.includes("電話") || contactMethod === "phone") {
     contactHtml = '<div class="template-box">' + escHtml(template) + '</div>'
       + (tel ? '<a class="tel-link" href="tel:' + escHtml(tel) + '">📞 ' + escHtml(tel) + ' に発信</a>' : '');
+  } else if (contactMethod.toLowerCase().includes("メール") || contactMethod.toLowerCase().includes("mail")) {
+    contactHtml = '<textarea id="inq-tmpl-' + id + '" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">' + escHtml(template) + '</textarea>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">'
+      + (email ? '<button class="btn btn-secondary btn-sm" onclick="openMailInquiry(' + id + ')">📧 メールを開く</button>' : '')
+      + (tel ? '<a class="btn btn-secondary btn-sm" href="tel:' + escHtml(tel) + '">📞 電話</a>' : '')
+      + '</div>';
   } else {
-    contactHtml = `<textarea style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">${escHtml(template)}</textarea>`;
+    contactHtml = '<textarea id="inq-tmpl-' + id + '" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">' + escHtml(template) + '</textarea>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">'
+      + '<button class="btn btn-secondary btn-sm" onclick="copyInquiryTpl(' + id + ')">📋 コピー</button>'
+      + '<a class="btn btn-secondary btn-sm" href="https://chat.line.biz/" target="_blank">💬 LINEを開く</a>'
+      + (tel ? '<a class="btn btn-secondary btn-sm" href="tel:' + escHtml(tel) + '">📞 電話</a>' : '')
+      + '</div>'
+      + '<span id="inq-copy-done-' + id + '" style="display:none;font-size:.78rem;color:var(--green);margin-top:4px;">✅ コピーしました</span>';
   }
 
   return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-i-${id}">
@@ -2059,6 +2071,30 @@ function copyReplyTpl(id) {
   navigator.clipboard.writeText(el.value).then(() => {
     const done = document.getElementById("copy-done-reply-" + id);
     if (done) { done.style.display = "inline"; setTimeout(() => { done.style.display = "none"; }, 2000); }
+  });
+}
+
+function openMailInquiry(id) {
+  const rec = inquiryRows.find(function(r) { return String(r.id) === String(id); });
+  if (!rec || !rec.email) return;
+  const tmpl = document.getElementById("inq-tmpl-" + id);
+  const body = tmpl ? tmpl.value : buildReplyTemplate(rec, "inquiry");
+  const subj = encodeURIComponent("【TEMC】お問い合わせのご回答");
+  const href = "mailto:" + rec.email + "?subject=" + subj + "&body=" + encodeURIComponent(body);
+  const a = document.createElement("a");
+  a.href = href;
+  a.target = "_top";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function copyInquiryTpl(id) {
+  const tmpl = document.getElementById("inq-tmpl-" + id);
+  if (!tmpl) return;
+  navigator.clipboard.writeText(tmpl.value).then(function() {
+    const done = document.getElementById("inq-copy-done-" + id);
+    if (done) { done.style.display = "inline"; setTimeout(function() { done.style.display = "none"; }, 2000); }
   });
 }
 
