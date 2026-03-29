@@ -1819,7 +1819,7 @@ function parseLineSummary(content) {
     if (/ピック|集荷/.test(item)) { result.pickup = item; continue; }
     if (/\d{3}-\d{4}|[都道府県市区町村丁目号室]/.test(item)) { result.delivery = (result.delivery ? result.delivery + " " : "") + item; continue; }
     if (/\d号サイズ|\d号$|[SML]サイズ/.test(item) && item.length < 20) { result.cargo = item; continue; }
-    if (/^\d+円$/.test(item)) { result.price = parseInt(item); continue; }
+    if (/^[¥￥]?[\d,]+円?$/.test(item) && /\d{3,}/.test(item)) { result.price = parseInt(item.replace(/[¥￥,円]/g, "")); continue; }
   }
   return result;
 }
@@ -1877,10 +1877,11 @@ function buildMessageCard(msg) {
     p.tel      ? '<div class="field-row"><span class="field-label">電話</span><span class="field-val">' + escHtml(p.tel) + '</span></div>' : "",
   ].filter(Boolean).join("");
 
-  var amountVal = msg.amount ? String(msg.amount) : "";
+  var effectiveAmount = msg.amount != null ? msg.amount : (p.price || null);
+  var amountVal = effectiveAmount != null ? String(effectiveAmount) : "";
 
-  var amountRowHtml = msg.amount
-    ? '<div class="field-row"><span class="field-label">金額</span><span class="field-val">¥' + Number(msg.amount).toLocaleString() + '</span></div>'
+  var amountRowHtml = effectiveAmount != null
+    ? '<div class="field-row"><span class="field-label">金額</span><span class="field-val">¥' + Number(effectiveAmount).toLocaleString() + '</span></div>'
     : "";
 
   return '<div class="card" id="line-card-' + id + '">'
@@ -1974,7 +1975,7 @@ async function rejectMsg(id) {
 }
 
 async function skipMsg(id) {
-  await callGas({ action: "skipMessage", token, msgId: id });
+  await callGas({ action: "skipMessage", token, id: id });
   lineMessages = lineMessages.filter(m => m.id !== id);
   renderMessages();
 }
@@ -1992,7 +1993,6 @@ function showLineEditForm(id) {
   if (!msg) return;
   var p = parseLineSummary(msg.content || "");
   var curAmount = document.getElementById("line-amount-" + id) ? document.getElementById("line-amount-" + id).value : (msg.amount || "");
-  var curNote = msg.note || "";
   var areaEl = document.getElementById("line-edit-area-" + id);
   if (!areaEl) return;
   // すでに表示中なら閉じる
@@ -2000,24 +2000,9 @@ function showLineEditForm(id) {
   areaEl.style.display = "block";
   areaEl.innerHTML = ''
     + '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:10px;">'
-    +   '<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:10px;">✏️ メッセージ内容を編集</div>'
-    +   '<div class="form-group"><label>氏名</label>'
-    +     '<input type="text" id="le-name-' + id + '" value="' + escHtml(p.name || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
-    +   '</div>'
-    +   '<div class="form-group"><label>電話番号</label>'
-    +     '<input type="tel" id="le-tel-' + id + '" value="' + escHtml(p.tel || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
-    +   '</div>'
-    +   '<div class="form-group"><label>集荷先</label>'
-    +     '<input type="text" id="le-pickup-' + id + '" value="' + escHtml(p.pickup || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
-    +   '</div>'
-    +   '<div class="form-group"><label>配達先</label>'
-    +     '<input type="text" id="le-delivery-' + id + '" value="' + escHtml(p.delivery || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
-    +   '</div>'
+    +   '<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:10px;">✏️ 金額・備考を編集</div>'
     +   '<div class="form-group"><label>金額（円）</label>'
     +     '<input type="number" id="le-amount-' + id + '" value="' + escHtml(String(curAmount)) + '" min="0" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
-    +   '</div>'
-    +   '<div class="form-group"><label>備考</label>'
-    +     '<textarea id="le-note-' + id + '" rows="2" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;resize:vertical;">' + escHtml(curNote) + '</textarea>'
     +   '</div>'
     +   '<div id="le-result-' + id + '" style="margin-bottom:8px;"></div>'
     +   '<div style="display:flex;gap:8px;">'
@@ -2028,43 +2013,27 @@ function showLineEditForm(id) {
 }
 
 async function saveLineEditForm(id) {
-  var nameVal     = document.getElementById("le-name-"     + id) ? document.getElementById("le-name-"     + id).value.trim() : "";
-  var telVal      = document.getElementById("le-tel-"      + id) ? document.getElementById("le-tel-"      + id).value.trim() : "";
-  var pickupVal   = document.getElementById("le-pickup-"   + id) ? document.getElementById("le-pickup-"   + id).value.trim() : "";
-  var deliveryVal = document.getElementById("le-delivery-" + id) ? document.getElementById("le-delivery-" + id).value.trim() : "";
-  var amountRaw   = document.getElementById("le-amount-"   + id) ? document.getElementById("le-amount-"   + id).value : "";
-  var noteVal     = document.getElementById("le-note-"     + id) ? document.getElementById("le-note-"     + id).value.trim() : "";
+  var amountRaw  = document.getElementById("le-amount-" + id) ? document.getElementById("le-amount-" + id).value : "";
+  var noteVal    = document.getElementById("le-note-"   + id) ? document.getElementById("le-note-"   + id).value.trim() : "";
   var amountParsed = amountRaw !== "" ? parseInt(amountRaw, 10) : null;
   var resultEl = document.getElementById("le-result-" + id);
 
   var updates = {};
-  if (nameVal)     updates.sender_name = nameVal;
-  if (telVal)      updates.tel         = telVal;
-  if (pickupVal)   updates.pickup      = pickupVal;
-  if (deliveryVal) updates.delivery    = deliveryVal;
   if (amountParsed !== null && !isNaN(amountParsed)) updates.amount = amountParsed;
-  if (noteVal !== undefined) updates.note = noteVal;
 
   if (resultEl) { resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--text2);">保存中...</span>'; }
   loading(true);
   try {
     var res = await callGas({ action: "updateLineMessage", token: token, id: id, updates: updates });
     if (res.ok) {
-      if (resultEl) resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--green);">✅ 保存しました</span>';
-      // カード内の金額表示も更新
-      var amountDisplayEl = document.getElementById("line-amount-" + id);
-      if (amountDisplayEl && amountParsed !== null && !isNaN(amountParsed)) {
-        amountDisplayEl.value = amountParsed;
-      }
-      // lineMessagesキャッシュも更新
+      // キャッシュ更新 → 再描画
       lineMessages = lineMessages.map(function(m) {
         if (m.id !== id) return m;
         var updated = Object.assign({}, m);
-        if (nameVal)     updated.sender_name = nameVal;
         if (amountParsed !== null && !isNaN(amountParsed)) updated.amount = amountParsed;
-        if (noteVal !== undefined) updated.note = noteVal;
         return updated;
       });
+      renderMessages();
     } else {
       if (resultEl) resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--red);">❌ ' + escHtml(res.error || "保存失敗") + '</span>';
     }

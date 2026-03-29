@@ -522,7 +522,7 @@ function actionRejectMessage(body) {
 }
 
 function actionSkipMessage(body) {
-  // スキップは処理済みにしない（次回も表示）
+  if (body.id) sbPatch(MESSAGES_TBL, "id=eq." + body.id, { processed: true });
   return { ok: true };
 }
 
@@ -548,7 +548,7 @@ function actionUpdateLineMessage(body) {
   if (!body.id) throw new Error("IDがありません");
   const updates = body.updates || {};
   // 許可フィールドのみ通す
-  const allowed = ["sender_name", "tel", "pickup", "delivery", "amount", "note"];
+  const allowed = ["sender_name", "amount"];
   const data = {};
   allowed.forEach(function(key) {
     if (updates[key] !== undefined) data[key] = updates[key];
