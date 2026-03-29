@@ -55,7 +55,8 @@ function dispatch(action, body) {
     case "skipMessage":     return actionSkipMessage(body);
     case "deleteRecord":    return actionDeleteRecord(body);
     case "broadcastLine":   return actionBroadcastLine(body);
-    case "updateNote":      return actionUpdateNote(body);
+    case "updateNote":          return actionUpdateNote(body);
+    case "updateLineMessage":   return actionUpdateLineMessage(body);
     case "insertOtherWork":         return actionInsertOtherWork(body);
     case "loadOtherWorks":          return actionLoadOtherWorks(body);
     case "deleteOtherWork":         return actionDeleteOtherWork(body);
@@ -481,6 +482,7 @@ function actionLoadMessages() {
   const rows = sbGet(MESSAGES_TBL, {
     select: "*",
     processed: "eq.false",
+    source: "eq.line_personal",
     order: "created_at.asc"
   });
   if (!Array.isArray(rows)) throw new Error("メッセージ取得失敗");
@@ -539,6 +541,20 @@ function actionDeleteRecord(body) {
 function actionUpdateNote(body) {
   if (!body.id) throw new Error("IDがありません");
   sbPatch(TBL, "id=eq." + body.id, { note: body.note });
+  return { ok: true };
+}
+
+function actionUpdateLineMessage(body) {
+  if (!body.id) throw new Error("IDがありません");
+  const updates = body.updates || {};
+  // 許可フィールドのみ通す
+  const allowed = ["sender_name", "tel", "pickup", "delivery", "amount", "note"];
+  const data = {};
+  allowed.forEach(function(key) {
+    if (updates[key] !== undefined) data[key] = updates[key];
+  });
+  if (Object.keys(data).length === 0) return { ok: true };
+  sbPatch(MESSAGES_TBL, "id=eq." + body.id, data);
   return { ok: true };
 }
 

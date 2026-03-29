@@ -1864,43 +1864,52 @@ function buildMessageCard(msg) {
   const conflicts = checkConflicts(p.date, p.time);
 
   const conflictHtml = conflicts.length
-    ? `<div class="alert alert-warn" style="margin:8px 0;font-size:.8rem;">⚠️ 近い案件あり: ${conflicts.map(c => escHtml(c.name||"不明") + " 様").join(", ")}</div>`
-    : `<div class="alert alert-success" style="margin:8px 0;font-size:.78rem;padding:6px 10px;">✅ スケジュール重複なし</div>`;
+    ? '<div class="alert alert-warn" style="margin:8px 0;font-size:.8rem;">⚠️ 近い案件あり: ' + conflicts.map(function(c){ return escHtml(c.name||"不明") + " 様"; }).join(", ") + '</div>'
+    : '<div class="alert alert-success" style="margin:8px 0;font-size:.78rem;padding:6px 10px;">✅ スケジュール重複なし</div>';
 
   const summaryHtml = [
-    p.name     ? `<div class="field-row"><span class="field-label">氏名</span><span class="field-val">${escHtml(p.name)}</span></div>` : "",
-    p.date     ? `<div class="field-row"><span class="field-label">日付</span><span class="field-val">${escHtml(p.date)}</span></div>` : "",
-    p.time     ? `<div class="field-row"><span class="field-label">時間</span><span class="field-val">${escHtml(p.time)}</span></div>` : "",
-    p.pickup   ? `<div class="field-row"><span class="field-label">集荷</span><span class="field-val">${escHtml(p.pickup)}</span></div>` : "",
-    p.delivery ? `<div class="field-row"><span class="field-label">配達先</span><span class="field-val">${escHtml(p.delivery)}</span></div>` : "",
-    p.cargo    ? `<div class="field-row"><span class="field-label">荷物</span><span class="field-val">${escHtml(p.cargo)}</span></div>` : "",
-    p.tel      ? `<div class="field-row"><span class="field-label">電話</span><span class="field-val">${escHtml(p.tel)}</span></div>` : "",
+    p.name     ? '<div class="field-row"><span class="field-label">氏名</span><span class="field-val">' + escHtml(p.name) + '</span></div>' : "",
+    p.date     ? '<div class="field-row"><span class="field-label">日付</span><span class="field-val">' + escHtml(p.date) + '</span></div>' : "",
+    p.time     ? '<div class="field-row"><span class="field-label">時間</span><span class="field-val">' + escHtml(p.time) + '</span></div>' : "",
+    p.pickup   ? '<div class="field-row"><span class="field-label">集荷</span><span class="field-val">' + escHtml(p.pickup) + '</span></div>' : "",
+    p.delivery ? '<div class="field-row"><span class="field-label">配達先</span><span class="field-val">' + escHtml(p.delivery) + '</span></div>' : "",
+    p.cargo    ? '<div class="field-row"><span class="field-label">荷物</span><span class="field-val">' + escHtml(p.cargo) + '</span></div>' : "",
+    p.tel      ? '<div class="field-row"><span class="field-label">電話</span><span class="field-val">' + escHtml(p.tel) + '</span></div>' : "",
   ].filter(Boolean).join("");
 
-  return `<div class="card" id="line-card-${id}">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-weight:700;font-size:.9rem;">📱 ${sender}</span>
-      <span style="font-size:.75rem;color:var(--text2);">${created}</span>
-    </div>
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;
-      font-size:.8rem;white-space:pre-wrap;color:var(--text2);max-height:120px;overflow-y:auto;margin-bottom:10px;">${content}</div>
-    ${summaryHtml ? `<div style="margin-bottom:8px;">${summaryHtml}</div>` : ""}
-    ${conflictHtml}
-    <div id="line-result-${id}"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-      <button class="btn btn-primary" onclick="acceptMsg('${id}')">✅ 受注</button>
-      <button class="btn btn-danger" onclick="showRejectTpl('${id}')">❌ 拒否</button>
-      <button class="btn btn-secondary" onclick="skipMsg('${id}')">⏭ スキップ</button>
-    </div>
-    <div id="reject-tpl-${id}" style="display:none;margin-top:12px;">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;">
-        <p style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">拒否テンプレ</p>
-        <div id="tpl-text-${id}" style="font-size:.88rem;color:var(--text);margin-bottom:8px;">お疲れ様です。その日時は受けれません。</div>
-        <button class="btn btn-secondary btn-sm" onclick="copyTpl('${id}')">📋 コピー</button>
-        <span id="copy-done-${id}" style="display:none;font-size:.78rem;color:var(--green);margin-left:8px;">✅ コピーしました</span>
-      </div>
-    </div>
-  </div>`;
+  var amountVal = msg.amount ? String(msg.amount) : "";
+
+  var amountRowHtml = msg.amount
+    ? '<div class="field-row"><span class="field-label">金額</span><span class="field-val">¥' + Number(msg.amount).toLocaleString() + '</span></div>'
+    : "";
+
+  return '<div class="card" id="line-card-' + id + '">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+    +   '<span style="font-weight:700;font-size:.9rem;">📱 ' + sender + '</span>'
+    +   '<span style="font-size:.75rem;color:var(--text2);">' + created + '</span>'
+    + '</div>'
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;'
+    +   'font-size:.8rem;white-space:pre-wrap;color:var(--text2);max-height:120px;overflow-y:auto;margin-bottom:10px;">' + content + '</div>'
+    + (summaryHtml || amountRowHtml ? '<div style="margin-bottom:8px;">' + summaryHtml + amountRowHtml + '</div>' : "")
+    + conflictHtml
+    + '<input type="hidden" id="line-amount-' + id + '" value="' + amountVal + '">'
+    + '<div id="line-result-' + id + '"></div>'
+    + '<div id="line-edit-area-' + id + '"></div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">'
+    +   '<button class="btn btn-primary" onclick="acceptMsg(\'' + id + '\')">✅ 受注</button>'
+    +   '<button class="btn btn-secondary" onclick="showLineEditForm(\'' + id + '\')">✏️ 編集</button>'
+    +   '<button class="btn btn-danger" onclick="showRejectTpl(\'' + id + '\')">❌ 拒否</button>'
+    +   '<button class="btn btn-secondary" onclick="skipMsg(\'' + id + '\')">⏭ スキップ</button>'
+    + '</div>'
+    + '<div id="reject-tpl-' + id + '" style="display:none;margin-top:12px;">'
+    +   '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;">'
+    +     '<p style="font-size:.78rem;color:var(--text2);margin-bottom:6px;">拒否テンプレ</p>'
+    +     '<div id="tpl-text-' + id + '" style="font-size:.88rem;color:var(--text);margin-bottom:8px;">お疲れ様です。その日時は受けれません。</div>'
+    +     '<button class="btn btn-secondary btn-sm" onclick="copyTpl(\'' + id + '\')">📋 コピー</button>'
+    +     '<span id="copy-done-' + id + '" style="display:none;font-size:.78rem;color:var(--green);margin-left:8px;">✅ コピーしました</span>'
+    +   '</div>'
+    + '</div>'
+    + '</div>';
 }
 
 async function acceptMsg(id) {
@@ -1918,7 +1927,10 @@ async function acceptMsg(id) {
     desired_datetime = new Date(year, parseInt(dm[1])-1, parseInt(dm[2]),
       parseInt(hhmm.split(":")[0]), parseInt(hhmm.split(":")[1])).toISOString();
   }
-  const priceNote = p.price ? `[¥${p.price}]` : null;
+  const priceNote = p.price ? "[¥" + p.price + "]" : null;
+  var amountInput = document.getElementById("line-amount-" + id);
+  var amountVal = amountInput ? parseInt(amountInput.value, 10) : NaN;
+  var amountToSend = !isNaN(amountVal) && amountVal > 0 ? amountVal : (p.price || null);
   const row = {
     name:             p.name    || null,
     tel:              p.tel     || null,
@@ -1929,6 +1941,7 @@ async function acceptMsg(id) {
     contact_method:   "LINE",
     note:             priceNote,
     status:           "確定",
+    amount:           amountToSend,
   };
   loading(true);
   try {
@@ -1972,6 +1985,92 @@ function copyTpl(id) {
     const done = document.getElementById("copy-done-" + id);
     if (done) { done.style.display = "inline"; setTimeout(() => { done.style.display = "none"; }, 2000); }
   });
+}
+
+function showLineEditForm(id) {
+  var msg = lineMessages.find(function(m) { return m.id === id; });
+  if (!msg) return;
+  var p = parseLineSummary(msg.content || "");
+  var curAmount = document.getElementById("line-amount-" + id) ? document.getElementById("line-amount-" + id).value : (msg.amount || "");
+  var curNote = msg.note || "";
+  var areaEl = document.getElementById("line-edit-area-" + id);
+  if (!areaEl) return;
+  // すでに表示中なら閉じる
+  if (areaEl.style.display === "block") { areaEl.style.display = "none"; return; }
+  areaEl.style.display = "block";
+  areaEl.innerHTML = ''
+    + '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:10px;">'
+    +   '<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:10px;">✏️ メッセージ内容を編集</div>'
+    +   '<div class="form-group"><label>氏名</label>'
+    +     '<input type="text" id="le-name-' + id + '" value="' + escHtml(p.name || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
+    +   '</div>'
+    +   '<div class="form-group"><label>電話番号</label>'
+    +     '<input type="tel" id="le-tel-' + id + '" value="' + escHtml(p.tel || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
+    +   '</div>'
+    +   '<div class="form-group"><label>集荷先</label>'
+    +     '<input type="text" id="le-pickup-' + id + '" value="' + escHtml(p.pickup || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
+    +   '</div>'
+    +   '<div class="form-group"><label>配達先</label>'
+    +     '<input type="text" id="le-delivery-' + id + '" value="' + escHtml(p.delivery || "") + '" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
+    +   '</div>'
+    +   '<div class="form-group"><label>金額（円）</label>'
+    +     '<input type="number" id="le-amount-' + id + '" value="' + escHtml(String(curAmount)) + '" min="0" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
+    +   '</div>'
+    +   '<div class="form-group"><label>備考</label>'
+    +     '<textarea id="le-note-' + id + '" rows="2" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;resize:vertical;">' + escHtml(curNote) + '</textarea>'
+    +   '</div>'
+    +   '<div id="le-result-' + id + '" style="margin-bottom:8px;"></div>'
+    +   '<div style="display:flex;gap:8px;">'
+    +     '<button class="btn btn-primary btn-sm" onclick="saveLineEditForm(\'' + id + '\')">💾 保存</button>'
+    +     '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'line-edit-area-' + id + '\').style.display=\'none\'">キャンセル</button>'
+    +   '</div>'
+    + '</div>';
+}
+
+async function saveLineEditForm(id) {
+  var nameVal     = document.getElementById("le-name-"     + id) ? document.getElementById("le-name-"     + id).value.trim() : "";
+  var telVal      = document.getElementById("le-tel-"      + id) ? document.getElementById("le-tel-"      + id).value.trim() : "";
+  var pickupVal   = document.getElementById("le-pickup-"   + id) ? document.getElementById("le-pickup-"   + id).value.trim() : "";
+  var deliveryVal = document.getElementById("le-delivery-" + id) ? document.getElementById("le-delivery-" + id).value.trim() : "";
+  var amountRaw   = document.getElementById("le-amount-"   + id) ? document.getElementById("le-amount-"   + id).value : "";
+  var noteVal     = document.getElementById("le-note-"     + id) ? document.getElementById("le-note-"     + id).value.trim() : "";
+  var amountParsed = amountRaw !== "" ? parseInt(amountRaw, 10) : null;
+  var resultEl = document.getElementById("le-result-" + id);
+
+  var updates = {};
+  if (nameVal)     updates.sender_name = nameVal;
+  if (telVal)      updates.tel         = telVal;
+  if (pickupVal)   updates.pickup      = pickupVal;
+  if (deliveryVal) updates.delivery    = deliveryVal;
+  if (amountParsed !== null && !isNaN(amountParsed)) updates.amount = amountParsed;
+  if (noteVal !== undefined) updates.note = noteVal;
+
+  if (resultEl) { resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--text2);">保存中...</span>'; }
+  loading(true);
+  try {
+    var res = await callGas({ action: "updateLineMessage", token: token, id: id, updates: updates });
+    if (res.ok) {
+      if (resultEl) resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--green);">✅ 保存しました</span>';
+      // カード内の金額表示も更新
+      var amountDisplayEl = document.getElementById("line-amount-" + id);
+      if (amountDisplayEl && amountParsed !== null && !isNaN(amountParsed)) {
+        amountDisplayEl.value = amountParsed;
+      }
+      // lineMessagesキャッシュも更新
+      lineMessages = lineMessages.map(function(m) {
+        if (m.id !== id) return m;
+        var updated = Object.assign({}, m);
+        if (nameVal)     updated.sender_name = nameVal;
+        if (amountParsed !== null && !isNaN(amountParsed)) updated.amount = amountParsed;
+        if (noteVal !== undefined) updated.note = noteVal;
+        return updated;
+      });
+    } else {
+      if (resultEl) resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--red);">❌ ' + escHtml(res.error || "保存失敗") + '</span>';
+    }
+  } catch(e) {
+    if (resultEl) resultEl.innerHTML = '<span style="font-size:.78rem;color:var(--red);">❌ ' + escHtml(e.message) + '</span>';
+  } finally { loading(false); }
 }
 
 function switchReplyTmpl(id, val, name) {
