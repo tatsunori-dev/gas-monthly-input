@@ -1040,7 +1040,9 @@ function buildDeliveryCard(rec) {
     var telBtnM = rec.tel
       ? '<a class="btn btn-secondary btn-sm" href="tel:' + escHtml(rec.tel) + '">📞 電話</a>'
       : "";
+    var safeNameM = (rec.name || "お客様").replace(/'/g, "\\'");
     contactHtml = '<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">📧 メール</p>'
+      + '<select id="tmplSelectM-' + id + '" onchange="switchReplyTmpl(' + id + ', this.value, \'' + safeNameM + '\')" style="width:100%;margin-bottom:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:.82rem;"><option value="estimate">見積もりテンプレ</option><option value="bank">振り込み先テンプレ</option></select>'
       + '<textarea id="reply-tmpl-' + id + '" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">' + escHtml(template) + '</textarea>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">'
       + mailBtn + telBtnM
@@ -1049,7 +1051,9 @@ function buildDeliveryCard(rec) {
     var telBtnL = rec.tel
       ? '<a class="btn btn-secondary btn-sm" href="tel:' + escHtml(rec.tel) + '">📞 電話</a>'
       : "";
+    var safeNameL = (rec.name || "お客様").replace(/'/g, "\\'");
     contactHtml = '<p style="font-size:.8rem;color:var(--accent);margin-bottom:6px;">💬 LINE</p>'
+      + '<select id="tmplSelectL-' + id + '" onchange="switchReplyTmpl(' + id + ', this.value, \'' + safeNameL + '\')" style="width:100%;margin-bottom:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:.82rem;"><option value="estimate">見積もりテンプレ</option><option value="bank">振り込み先テンプレ</option></select>'
       + '<textarea id="reply-tmpl-' + id + '" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px;font-size:.78rem;">' + escHtml(template) + '</textarea>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">'
       + '<button class="btn btn-secondary btn-sm" onclick="copyReplyTpl(' + id + ')">📋 コピー</button>'
@@ -1967,6 +1971,17 @@ function copyTpl(id) {
     const done = document.getElementById("copy-done-" + id);
     if (done) { done.style.display = "inline"; setTimeout(() => { done.style.display = "none"; }, 2000); }
   });
+}
+
+function switchReplyTmpl(id, val, name) {
+  var el = document.getElementById('reply-tmpl-' + id);
+  if (!el) return;
+  if (val === 'bank') {
+    el.value = name + ' 様\n\nお振込先をご案内いたします。\n\n【クレジットカード・PayPayでのお支払い】\n以下のリンクよりお手続きください。\nhttps://buy.stripe.com/cNicN48to5212Wv8fH0gw00\n\n【銀行振込でのお支払い】\n▼ 三井住友銀行\n　札幌支店（301）\n　口座番号：8078971\n　名義：マツモトタツノリ\n\n▼ ゆうちょ銀行\n　〇九八支店（098）\n　口座番号：5746881\n　名義：マツモトタツノリ\n\n※ お振込の際は、申し込み時と同じお名前・電話番号をご入力ください。\n\nご不明な点はお気軽にご連絡ください。\nTEMC / 090-5780-6059';
+  } else {
+    var rec = deliveryRows.find(function(r) { return r.id === id; });
+    if (rec) el.value = buildReplyTemplate(rec, 'delivery');
+  }
 }
 
 function copyReplyTpl(id) {
