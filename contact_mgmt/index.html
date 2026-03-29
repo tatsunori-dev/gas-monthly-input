@@ -507,7 +507,7 @@
       <!-- 経路・距離計算 -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
         <button type="button" class="btn btn-secondary btn-sm" onclick="openManualRoute()">🗺️ 経路を見る</button>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="fetchManualDist()">📏 距離を計算</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="showManualEstimate()">💴 見積もりを出す</button>
       </div>
       <div id="m-dist-result" style="margin-bottom:12px;"></div>
 
@@ -1645,25 +1645,34 @@ function openManualRoute() {
   window.open("https://www.google.com/maps/dir/" + encodeURIComponent(pickup) + "/" + encodeURIComponent(delivery), "_blank");
 }
 
-async function fetchManualDist() {
+async function showManualEstimate() {
   const pickup   = document.getElementById("m-pickup").value.trim();
   const delivery = document.getElementById("m-delivery").value.trim();
   const el = document.getElementById("m-dist-result");
   if (!pickup || !delivery) { el.innerHTML = '<div class="alert alert-warn">集荷先・配達先を入力してください</div>'; return; }
-  el.innerHTML = '<div style="display:inline-flex;gap:8px;align-items:center;padding:8px 14px;background:var(--surface2);border-radius:8px;font-size:.82rem;color:var(--text2);"><div class="spinner" style="width:14px;height:14px;"></div>計算中...</div>';
+  el.innerHTML = '<div style="font-size:.82rem;color:var(--text2);padding:6px 0;">計算中...</div>';
   try {
     const res = await callGas({ action: "getDistance", token, pickup, delivery });
-    if (res.ok && res.dist != null) {
-      const km = res.dist;
-      const price = calcPrice(km);
-      el.innerHTML = `<div style="display:inline-flex;gap:20px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;">
-        <div><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
-        <div><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>
-      </div>`;
-    } else {
-      el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
-    }
-  } catch(e) { el.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+    if (!res.ok || res.dist == null) { el.innerHTML = '<div class="alert alert-warn">距離を取得できませんでした</div>'; return; }
+    const km = res.dist;
+    const weight = document.getElementById("m-weight").value;
+    const opts = [];
+    if (weight === "heavy1") opts.push("重量物（30〜50kg）");
+    if (weight === "heavy2") opts.push("重量物（50kg超）");
+    const est = calcEstimate(km, opts);
+    const rows = [["基本料金（" + km + " km）", est.base]];
+    Object.entries(est.optAmounts).forEach(function(e) { rows.push([e[0], e[1]]); });
+    rows.push(["合計", est.total]);
+    const tableHtml = rows.map(function(r, i) {
+      const isTot = i === rows.length - 1;
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;' + (isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);') + '">'
+        + '<span>' + r[0] + '</span><span>¥' + r[1].toLocaleString() + '</span></div>';
+    }).join("");
+    const noteHtml = est.note ? '<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">' + est.note + '</p>' : "";
+    document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
+    document.getElementById("estimate-modal").style.display = "flex";
+    el.innerHTML = "";
+  } catch(e) { el.innerHTML = '<div class="alert alert-error">' + escHtml(e.message) + '</div>'; }
 }
 
 let extraAddrCount = 0;
