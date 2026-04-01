@@ -514,6 +514,22 @@ function actionAcceptMessage(body) {
   // messages を処理済みに更新
   if (msgId) sbPatch(MESSAGES_TBL, "id=eq." + msgId, { processed: true });
 
+  // Googleカレンダー登録（失敗してもDB登録は成功扱い）
+  if (row.desired_datetime) {
+    try {
+      const dt = new Date(row.desired_datetime);
+      const calRow = {
+        id:              inserted.id,
+        client_name:     "しょんぴぃ",
+        work_date:       Utilities.formatDate(dt, "Asia/Tokyo", "yyyy-MM-dd"),
+        pickup_time:     Utilities.formatDate(dt, "Asia/Tokyo", "HH:mm"),
+        end_time:        Utilities.formatDate(new Date(dt.getTime() + 2 * 60 * 60 * 1000), "Asia/Tokyo", "HH:mm"),
+        pickup_location: row.pickup_address || "",
+        name:            row.name || ""
+      };
+      addToCalendarInner(calRow);
+    } catch(e) { Logger.log("カレンダー登録失敗: " + e.message); }
+  }
 
   return { ok: true, id: inserted.id };
 }
