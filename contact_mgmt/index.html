@@ -1834,7 +1834,7 @@ function parseLineSummary(content) {
   for (const line of lines) {
     const item = line.replace(/^●/, "").trim();
     if (/^[0-9０-９]{1,2}[\/月][0-9０-９]{1,2}/.test(item)) { result.date = item; continue; }
-    if (/[A-Da-d]枠|[0-9]{1,2}時.*[〜~]/.test(item)) { result.time = item; continue; }
+    if (/[A-Da-d]枠|[0-9]{1,2}時.*[〜~]|[0-9]{1,2}\s*[-〜ー]\s*[0-9]{1,2}(?![月\/\d])/.test(item)) { result.time = item; continue; }
     if (/.+様$/.test(item) && !/\d/.test(item)) { result.name = item; continue; }
     if (/^0\d{9,10}$/.test(item.replace(/[\s\-]/g,""))) { result.tel = item; continue; }
     if (/ピック|集荷/.test(item)) { result.pickup = item; continue; }
@@ -1856,7 +1856,7 @@ function checkConflicts(dateStr, timeStr) {
   const slots = {A:9,B:12,C:15,D:17};
   if (tm) hour = slots[tm[1].toUpperCase()] || 0;
   else {
-    const hm = timeStr && timeStr.match(/(\d{1,2})時/);
+    const hm = timeStr && (timeStr.match(/(\d{1,2})時/) || timeStr.match(/^(\d{1,2})\s*[-〜ー]/));
     if (hm) hour = parseInt(hm[1]);
   }
   const newDt = new Date(year, month-1, day, hour);
@@ -1944,7 +1944,7 @@ async function acceptMsg(id) {
   let desired_datetime = null;
   if (dm) {
     const tm = p.time && p.time.match(/([A-Da-d])枠/i);
-    const hm = !tm && p.time && p.time.match(/(\d{1,2})時/);
+    const hm = !tm && p.time && (p.time.match(/(\d{1,2})時/) || p.time.match(/^(\d{1,2})\s*[-〜ー]/));
     const hhmm = tm ? slots[tm[1].toUpperCase()] : (hm ? `${parseInt(hm[1]).toString().padStart(2,"0")}:00` : "00:00");
     desired_datetime = new Date(year, parseInt(dm[1])-1, parseInt(dm[2]),
       parseInt(hhmm.split(":")[0]), parseInt(hhmm.split(":")[1])).toISOString();

@@ -425,11 +425,13 @@ function actionGenerateIcal(body) {
   const uid     = Utilities.getUuid();
   const now     = fmtDt(new Date());
   const name    = rec.name     || "";
+  const nameSan = removeSan(name) + " 様";  // 「様様」防止
   const pickup  = rec.pickup_address   || "";
   const delivery= rec.delivery_address || "";
   const cargo   = rec.cargo_info || "";
   const tel     = rec.tel        || "";
   const payment = rec.payment_method   || "";
+  const startHH = Utilities.formatDate(dt, "Asia/Tokyo", "H");  // 開始時刻（時のみ）
 
   const ical = [
     "BEGIN:VCALENDAR",
@@ -440,7 +442,7 @@ function actionGenerateIcal(body) {
     "DTSTAMP:" + now,
     "DTSTART:" + dtStart,
     "DTEND:" + fmtDt(dtEnd),
-    "SUMMARY:【TEMC配達】" + name + " 様",
+    "SUMMARY:" + startHH + "-TEMC配達 " + nameSan,
     "DESCRIPTION:依頼者: " + name + "\\n電話: " + tel + "\\n集荷先: " + pickup + "\\n配達先: " + delivery + "\\n荷物: " + cargo + "\\n支払: " + payment,
     "LOCATION:" + delivery,
     "END:VEVENT",
@@ -511,6 +513,7 @@ function actionAcceptMessage(body) {
 
   // messages を処理済みに更新
   if (msgId) sbPatch(MESSAGES_TBL, "id=eq." + msgId, { processed: true });
+
 
   return { ok: true, id: inserted.id };
 }
@@ -628,7 +631,7 @@ function buildCalendarTitle(row) {
   }
   if (client === "ハコベル")  return tLabel + "-ハコベル";
   if (client === "HP客")      return tLabel + "-" + (row.name || "HP客");
-  if (client === "しょんぴぃ") return tLabel + "-しょんぴぃ";
+  if (client === "しょんぴぃ") return tLabel + "-TEMC配達 " + removeSan(row.name || "") + " 様";
   return tLabel + "-" + client;
 }
 
@@ -865,6 +868,17 @@ function archiveBoardItem(params) {
   return { ok: true };
 }
 
+// ─── ユーティリティ ───────────────────────────────────────────
+
+/**
+ * 末尾の「様」を除去して返す（「様様」重複防止用）
+ * 例: "山田様" → "山田"  /  "山田" → "山田"
+ */
+function removeSan(name) {
+  return (name || "").replace(/\s*様\s*$/, "");
+}
+
+
 // ─── Gmail通知（新着時） ──────────────────────────────────────
 
 function notifyNewDelivery(rec) {
@@ -872,7 +886,7 @@ function notifyNewDelivery(rec) {
   try {
     GmailApp.sendEmail(
       NOTIFY_EMAIL,
-      "[TEMC] 新着 配送依頼: " + (rec.name || "") + " 様",
+      "[TEMC] 新着 配送依頼: " + removeSan(rec.name || "") + " 様",
       "新しい配送依頼が届きました。\n\n" +
       "■ 依頼者: " + (rec.name || "") + "\n" +
       "■ 電話: "   + (rec.tel  || "") + "\n" +
