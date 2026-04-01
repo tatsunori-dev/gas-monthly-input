@@ -1357,7 +1357,7 @@ function buildBoardCard(rec) {
           <input type="number" id="amount-${id}" value="${autoAmount}" min="0" step="100" style="margin-bottom:8px;">
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-secondary btn-sm" onclick="saveAmount(${id})">💾 金額を保存</button>
-            <button class="btn btn-secondary btn-sm" onclick="downloadIcal(${id})">📅 iCal</button>
+            ${!(rec.note || '').includes('[LINE経由]') ? `<button class="btn btn-secondary btn-sm" onclick="downloadIcal(${id})">📅 iCal</button>` : ''}
           </div>
           <div id="amount-result-${id}" style="margin-top:6px;"></div>
         </div>
