@@ -677,7 +677,7 @@ function addToCalendarInner(row) {
   } else if (client === "Fresh")      { color = CalendarApp.EventColor.YELLOW;   }
   else if (client === "ハコベル")      { color = CalendarApp.EventColor.CYAN;     }
   else if (client === "HP客")          { color = CalendarApp.EventColor.RED;      }
-  else if (client === "しょんぴぃ")    { color = CalendarApp.EventColor.FLAMINGO; }
+  else if (client === "しょんぴぃ")    { color = "4"; } // Flamingo (pink)
   else                                 { color = CalendarApp.EventColor.ORANGE;   }
 
   const [startDate, endDate] = buildEventDates(row);
