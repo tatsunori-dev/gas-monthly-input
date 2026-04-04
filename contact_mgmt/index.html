@@ -584,6 +584,118 @@ let distCache = {};     // rid -> km（後方互換のため残す）
 let estimateCache = {}; // rid -> {zone, total}
 let showingArchive = false;
 
+// ─── ゾーン料金定数 ────────────────────────────────────
+var ZONE_PRICES = { A:5500, B:15500, C:20500, D:27800, E:33500, F:43500, G:49800, H:59800 };
+
+function calcEstimate(zone, opts) {
+  opts = opts || [];
+  var base = ZONE_PRICES[zone] || 0;
+  var OPTIONS = {
+    "夜間（18〜21時）": 1500,
+    "深夜（21〜24時）": 3000,
+    "時間指定（その他）": 1000,
+    "重量物（30〜50kg）": 5000,
+    "重量物（50kg超）": 0,
+    "積み置き（1日）": base
+  };
+  var optAmounts = {};
+  opts.forEach(function(o) { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
+  var total = base + Object.values(optAmounts).reduce(function(s, v) { return s + v; }, 0);
+  var note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
+  return { base: base, optAmounts: optAmounts, total: total, note: note };
+}
+
+// ─── ゾーンピッカー ────────────────────────────────────
+var zpSource   = null;   // "delivery" | "manual" | "board"
+var zpSourceId = null;   // rid (deliveryの場合)
+var zpInitOpts = [];     // 初期オプション
+
+function openEstimateModal(source, id, zone, opts) {
+  zpSource   = source;
+  zpSourceId = id;
+  zpInitOpts = opts || [];
+  var modal = document.getElementById("zone-picker-modal");
+  if (!modal) return;
+  var zoneEl = document.getElementById("zp-zone");
+  if (zoneEl) zoneEl.value = zone || "A";
+  // オプション初期化
+  var optMap = {
+    "夜間（18〜21時）":    "zp-night1",
+    "深夜（21〜24時）":   "zp-night2",
+    "時間指定（その他）":  "zp-time",
+    "重量物（30〜50kg）":  "zp-heavy1",
+    "重量物（50kg超）":   "zp-heavy2",
+    "積み置き（1日）":    "zp-okioki"
+  };
+  Object.values(optMap).forEach(function(cbId) {
+    var cb = document.getElementById(cbId);
+    if (cb) cb.checked = false;
+  });
+  zpInitOpts.forEach(function(o) {
+    var cbId = optMap[o];
+    var cb = cbId ? document.getElementById(cbId) : null;
+    if (cb) cb.checked = true;
+  });
+  updateZonePicker();
+  modal.style.display = "flex";
+}
+
+function closeZonePicker() {
+  var modal = document.getElementById("zone-picker-modal");
+  if (modal) modal.style.display = "none";
+}
+
+function updateZonePicker() {
+  var zone = (document.getElementById("zp-zone") || {}).value || "A";
+  var opts = [];
+  if ((document.getElementById("zp-night1") || {}).checked)  opts.push("夜間（18〜21時）");
+  if ((document.getElementById("zp-night2") || {}).checked)  opts.push("深夜（21〜24時）");
+  if ((document.getElementById("zp-time")   || {}).checked)  opts.push("時間指定（その他）");
+  if ((document.getElementById("zp-heavy1") || {}).checked)  opts.push("重量物（30〜50kg）");
+  if ((document.getElementById("zp-heavy2") || {}).checked)  opts.push("重量物（50kg超）");
+  if ((document.getElementById("zp-okioki") || {}).checked)  opts.push("積み置き（1日）");
+  var est = calcEstimate(zone, opts);
+  var totalEl = document.getElementById("zp-total");
+  if (totalEl) totalEl.innerHTML = est.note
+    ? '<span style="font-size:.78rem;color:var(--accent);">' + est.note + '</span>'
+    : '合計: <strong>¥' + est.total.toLocaleString() + '</strong>';
+}
+
+function confirmZonePicker() {
+  var zone = (document.getElementById("zp-zone") || {}).value || "A";
+  var opts = [];
+  if ((document.getElementById("zp-night1") || {}).checked)  opts.push("夜間（18〜21時）");
+  if ((document.getElementById("zp-night2") || {}).checked)  opts.push("深夜（21〜24時）");
+  if ((document.getElementById("zp-time")   || {}).checked)  opts.push("時間指定（その他）");
+  if ((document.getElementById("zp-heavy1") || {}).checked)  opts.push("重量物（30〜50kg）");
+  if ((document.getElementById("zp-heavy2") || {}).checked)  opts.push("重量物（50kg超）");
+  if ((document.getElementById("zp-okioki") || {}).checked)  opts.push("積み置き（1日）");
+  var est = calcEstimate(zone, opts);
+  if (zpSourceId) estimateCache[zpSourceId] = { zone: zone, total: est.total };
+  // 内訳モーダル表示
+  var rows = [["基本料金（ゾーン" + zone + "）", est.base]];
+  Object.entries(est.optAmounts).forEach(function(e) { rows.push([e[0], e[1]]); });
+  rows.push(["合計", est.total]);
+  var tableHtml = rows.map(function(r, i) {
+    var isTot = i === rows.length - 1;
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;'
+      + (isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);')
+      + '"><span>' + r[0] + '</span><span>¥' + r[1].toLocaleString() + '</span></div>';
+  }).join("");
+  var noteHtml = est.note ? '<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">' + est.note + '</p>' : "";
+  document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
+  closeZonePicker();
+  document.getElementById("estimate-modal").style.display = "flex";
+  // 返信テンプレ更新
+  if (zpSourceId) {
+    var tmplEl = document.getElementById("reply-tmpl-" + zpSourceId);
+    if (tmplEl) {
+      var priceStr = "¥" + est.total.toLocaleString();
+      tmplEl.value = tmplEl.value.replace(/概算料金は .+? となります/, "概算料金は " + priceStr + " となります");
+    }
+  }
+}
+
 // ══════════════════════════════════════════════════════
 // GAS 呼び出し
 // ══════════════════════════════════════════════════════
@@ -885,30 +997,7 @@ function routeLink(a, b) {
   return "https://www.google.com/maps/dir/" + encodeURIComponent(a) + "/" + encodeURIComponent(b);
 }
 
-// ── ゾーン料金定数 ──
-const ZONE_PRICES = { A:5500, B:15500, C:20500, D:27800, E:33500, F:43500, G:49800, H:59800 };
-
-function calcPrice(zone, opts) {
-  return calcEstimate(zone, opts).total;
-}
-
-function calcEstimate(zone, opts) {
-  opts = opts || [];
-  const base = ZONE_PRICES[zone] || 0;
-  const OPTIONS = {
-    "夜間（18〜21時）": 1500,
-    "深夜（21〜24時）": 3000,
-    "時間指定（その他）": 1000,
-    "重量物（30〜50kg）": 5000,
-    "重量物（50kg超）": 0,
-    "積み置き（1日）": base
-  };
-  const optAmounts = {};
-  opts.forEach(o => { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
-  const total = base + Object.values(optAmounts).reduce((s, v) => s + v, 0);
-  const note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
-  return { base, optAmounts, total, note };
-}
+// calcEstimate / calcPrice はスクリプト先頭のゾーン版を使用
 
 function getOptsFromRecord(rec) {
   const opts = [];
@@ -917,113 +1006,25 @@ function getOptsFromRecord(rec) {
   const dt = rec.desired_datetime ? new Date(rec.desired_datetime) : null;
   if (dt) {
     const h = dt.getHours();
-    if (h >= 21) opts.push("深夜（21〜24時）");
-    else if (h >= 18) opts.push("夜間（18〜21時）");
+    if (h >= 22) opts.push("深夜（22〜24時）");
+    else if (h >= 20) opts.push("夜間（20〜22時）");
   }
   return opts;
-}
-
-// ── ゾーンピッカー状態 ──
-let zpSource   = null; // "delivery" | "manual" | "board"
-let zpSourceId = null;
-
-function openEstimateModal(source, id, presetZone, presetOpts) {
-  zpSource   = source;
-  zpSourceId = id || null;
-  document.getElementById("zp-zone").value = presetZone || "";
-  ["zp-night1","zp-night2","zp-timespec","zp-heavy1","zp-heavy2","zp-okioki"]
-    .forEach(cid => { document.getElementById(cid).checked = false; });
-  if (presetOpts) {
-    if (presetOpts.includes("夜間（18〜21時）"))   document.getElementById("zp-night1").checked  = true;
-    if (presetOpts.includes("深夜（21〜24時）"))   document.getElementById("zp-night2").checked  = true;
-    if (presetOpts.includes("時間指定（その他）")) document.getElementById("zp-timespec").checked = true;
-    if (presetOpts.includes("重量物（30〜50kg）")) document.getElementById("zp-heavy1").checked  = true;
-    if (presetOpts.includes("重量物（50kg超）"))   document.getElementById("zp-heavy2").checked  = true;
-    if (presetOpts.includes("積み置き（1日）"))    document.getElementById("zp-okioki").checked  = true;
-  }
-  updateZonePicker();
-  document.getElementById("zone-picker-modal").style.display = "flex";
-}
-
-function closeZonePicker() {
-  document.getElementById("zone-picker-modal").style.display = "none";
-}
-
-function getZpOpts() {
-  const opts = [];
-  if (document.getElementById("zp-night1").checked)  opts.push("夜間（18〜21時）");
-  if (document.getElementById("zp-night2").checked)  opts.push("深夜（21〜24時）");
-  if (document.getElementById("zp-timespec").checked) opts.push("時間指定（その他）");
-  if (document.getElementById("zp-heavy1").checked)  opts.push("重量物（30〜50kg）");
-  if (document.getElementById("zp-heavy2").checked)  opts.push("重量物（50kg超）");
-  if (document.getElementById("zp-okioki").checked)  opts.push("積み置き（1日）");
-  return opts;
-}
-
-function updateZonePicker() {
-  const zone = document.getElementById("zp-zone").value;
-  const el   = document.getElementById("zp-total");
-  if (!zone) { el.innerHTML = '<span style="color:var(--text2);">ゾーンを選択してください</span>'; return; }
-  const opts = getZpOpts();
-  const est  = calcEstimate(zone, opts);
-  const rows = [["エリア料金（ゾーン" + zone + "）", est.base]];
-  Object.entries(est.optAmounts).forEach(([k, v]) => rows.push([k, v]));
-  rows.push(["合計", est.total]);
-  el.innerHTML = rows.map((r, i) => {
-    const isTot = i === rows.length - 1;
-    return `<div style="display:flex;justify-content:space-between;${isTot ? 'font-weight:700;border-top:1px solid var(--border);padding-top:4px;margin-top:4px;' : 'font-size:.84rem;color:var(--text2);'}">`
-      + `<span>${r[0]}</span><span>¥${r[1].toLocaleString()}</span></div>`;
-  }).join("") + (est.note ? `<p style="font-size:.78rem;color:var(--accent);margin-top:4px;">${est.note}</p>` : "");
-}
-
-function confirmZonePicker() {
-  const zone = document.getElementById("zp-zone").value;
-  if (!zone) { alert("ゾーンを選択してください"); return; }
-  const opts = getZpOpts();
-  const est  = calcEstimate(zone, opts);
-  // 内訳モーダル表示
-  const rows = [["エリア料金（ゾーン" + zone + "）", est.base]];
-  Object.entries(est.optAmounts).forEach(([k, v]) => rows.push([k, v]));
-  rows.push(["合計", est.total]);
-  const tableHtml = rows.map((r, i) => {
-    const isTot = i === rows.length - 1;
-    return `<div style="display:flex;justify-content:space-between;padding:6px 0;${isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);'}">`
-      + `<span>${r[0]}</span><span>¥${r[1].toLocaleString()}</span></div>`;
-  }).join("");
-  const noteHtml = est.note ? `<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">${est.note}</p>` : "";
-  document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
-  // キャッシュ保存
-  if (zpSourceId != null) estimateCache[zpSourceId] = { zone, total: est.total };
-  // 返信テンプレに反映（deliveryタブ）
-  if (zpSource === "delivery" && zpSourceId != null) {
-    const tmplEl = document.getElementById("reply-tmpl-" + zpSourceId);
-    if (tmplEl) {
-      const priceStr = "¥" + est.total.toLocaleString();
-      tmplEl.value = tmplEl.value.replace(/概算料金は .+? となります/, "概算料金は " + priceStr + " となります");
-    }
-  }
-  // 金額フィールドに反映（boardタブ）
-  if (zpSource === "board" && zpSourceId != null) {
-    const amountEl = document.getElementById("amount-" + zpSourceId);
-    if (amountEl) amountEl.value = est.total;
-  }
-  closeZonePicker();
-  document.getElementById("estimate-modal").style.display = "flex";
 }
 
 function showEstimate(id) {
-  const rec = deliveryRows.find(r => r.id === id);
+  var rec = deliveryRows.find(function(r) { return r.id === id; });
   if (!rec) return;
-  const opts   = getOptsFromRecord(rec);
-  const cached = estimateCache[id];
+  var opts   = getOptsFromRecord(rec);
+  var cached = estimateCache[id];
   openEstimateModal("delivery", id, cached ? cached.zone : null, opts);
 }
 
 function buildReplyTemplate(rec, formType) {
-  const name    = rec.name || "お客様";
+  const name = rec.name || "お客様";
   const inquiry = rec.inquiry_type || "ご質問";
   if (formType === "delivery") {
-    const cached   = estimateCache[rec.id];
+    const cached = estimateCache[rec.id];
     const priceStr = cached ? "¥" + cached.total.toLocaleString() : "（後ほど連絡）";
     return `${name} 様\n\nこの度はTEMCへのご依頼、ありがとうございます。\n\n配送依頼を確認いたしました。\n概算料金は ${priceStr} となります。\n\nご確認いただけましたら、お振込先をご案内いたします。\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 090-5780-6059`;
   } else {
@@ -1129,7 +1130,9 @@ function buildDeliveryCard(rec) {
   var routeLinkHtml = (pickup && delivery)
     ? '<p style="margin:6px 0;font-size:.82rem;"><a href="' + routeLink(pickup,delivery) + '" target="_blank" style="color:var(--accent);">🗺️ 経路を見る</a></p>'
     : '';
-  var estimateBtnHtml = '<button class="btn btn-secondary btn-sm" onclick="showEstimate(' + id + ')">💴 見積もりを出す</button>';
+  var estimateBtnHtml = (pickup && delivery)
+    ? '<button class="btn btn-secondary btn-sm" onclick="showEstimate(' + id + ')">💴 見積もりを出す</button><div id="estimate-loading-' + id + '" style="display:none;font-size:.78rem;color:var(--text3);margin-top:4px;">計算中...</div>'
+    : '<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>';
 
   return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-${id}">
     <div class="acc-header" onclick="toggleAcc('${id}')">
@@ -1208,10 +1211,7 @@ async function fetchDist(id, pickup, delivery) {
     const res = await callGas({ action: "getDistance", token, pickup, delivery });
     if (res.ok && res.dist != null) {
       distCache[id] = res.dist;
-      const km = res.dist;
-      const price = calcPrice(km);
-      el.innerHTML = `<div class="metric"><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
-        <div class="metric"><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>`;
+      el.innerHTML = '<div class="metric"><div class="metric-label">距離</div><div class="metric-val">' + res.dist + ' km</div></div>';
     } else {
       el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
     }
@@ -1409,7 +1409,7 @@ function buildBoardCard(rec) {
         </div>
         <div>
           <div id="board-dist-${id}">
-            <button class="btn btn-secondary btn-sm" onclick="openEstimateModal('board',${id})">💴 見積もりを出す</button>
+            <button class="btn btn-secondary btn-sm" onclick="openEstimateModal('board',${id},estimateCache[${id}]?estimateCache[${id}].zone:null,[])">💴 見積もりを出す</button>
           </div>
           <hr class="section-sep" style="margin:12px 0;">
           <label>確定金額（円）</label>
@@ -1686,10 +1686,12 @@ function openManualRoute() {
 }
 
 function showManualEstimate() {
-  const weight = document.getElementById("m-weight") ? document.getElementById("m-weight").value : "";
-  const opts = [];
-  if (weight === "heavy1") opts.push("重量物（30〜50kg）");
-  if (weight === "heavy2") opts.push("重量物（50kg超）");
+  var weightEl = document.getElementById("m-weight");
+  var opts = [];
+  if (weightEl) {
+    if (weightEl.value === "heavy1") opts.push("重量物（30〜50kg）");
+    if (weightEl.value === "heavy2") opts.push("重量物（50kg超）");
+  }
   openEstimateModal("manual", null, null, opts);
 }
 
@@ -2631,48 +2633,59 @@ function showAlert(containerId, type, msg) {
   if (el) el.innerHTML = `<div class="alert alert-${type}">${escHtml(msg)}</div>`;
 }
 </script>
-<!-- ゾーンピッカーモーダル -->
-<div id="zone-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;" onclick="closeZonePicker()">
-  <div style="background:var(--card);border-radius:14px;padding:20px 18px;width:90%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
-    <p style="font-weight:700;font-size:1rem;margin-bottom:14px;">💴 エリア・オプション選択</p>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:4px;">配送エリア（ゾーン）</label>
-      <select id="zp-zone" onchange="updateZonePicker()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.88rem;">
-        <option value="">ゾーンを選択してください</option>
-        <option value="A">A — 札幌市内　¥5,500</option>
-        <option value="B">B — 石狩・江別・千歳・小樽など　¥15,500</option>
-        <option value="C">C — 苫小牧・岩見沢・砂川など　¥20,500</option>
-        <option value="D">D — 旭川・室蘭・登別・滝川など　¥27,800</option>
-        <option value="E">E — 伊達・士別・静内など　¥33,500</option>
-        <option value="F">F — 名寄・帯広・函館など　¥43,500</option>
-        <option value="G">G — 北見・釧路（一部）・網走など　¥49,800</option>
-        <option value="H">H — 稚内・釧路・根室・礼文・利尻など　¥59,800</option>
-      </select>
-    </div>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:6px;">オプション（複数選択可）</label>
-      <div style="display:flex;flex-direction:column;gap:7px;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;"><input type="checkbox" id="zp-night1"  onchange="updateZonePicker()"> 夜間（18〜21時）<span style="color:var(--text2);font-size:.8rem;">+1,500円</span></label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;"><input type="checkbox" id="zp-night2"  onchange="updateZonePicker()"> 深夜（21〜24時）<span style="color:var(--text2);font-size:.8rem;">+3,000円</span></label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;"><input type="checkbox" id="zp-timespec" onchange="updateZonePicker()"> 時間指定（その他）<span style="color:var(--text2);font-size:.8rem;">+1,000円</span></label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;"><input type="checkbox" id="zp-heavy1" onchange="updateZonePicker()"> 重量物（30〜50kg）<span style="color:var(--text2);font-size:.8rem;">+5,000円</span></label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;"><input type="checkbox" id="zp-heavy2" onchange="updateZonePicker()"> 重量物（50kg超）<span style="color:var(--text2);font-size:.8rem;">個別見積</span></label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;"><input type="checkbox" id="zp-okioki" onchange="updateZonePicker()"> 積み置き（1日）<span style="color:var(--text2);font-size:.8rem;">エリア料金分追加</span></label>
-      </div>
-    </div>
-    <div id="zp-total" style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:.9rem;"><span style="color:var(--text2);">ゾーンを選択してください</span></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="confirmZonePicker()">確定して内訳を見る</button>
-      <button class="btn btn-secondary" onclick="closeZonePicker()">キャンセル</button>
-    </div>
-  </div>
-</div>
 <!-- 見積もりモーダル -->
 <div id="estimate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;" onclick="document.getElementById('estimate-modal').style.display='none'">
   <div style="background:var(--card);border-radius:14px;padding:20px 18px;width:90%;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4);" onclick="event.stopPropagation()">
     <p style="font-weight:700;font-size:1rem;margin-bottom:12px;">💴 見積もり内訳</p>
     <div id="estimate-modal-content"></div>
     <button class="btn btn-secondary" style="width:100%;margin-top:14px;" onclick="document.getElementById('estimate-modal').style.display='none'">閉じる</button>
+  </div>
+</div>
+<!-- ===== ゾーンピッカーモーダル ===== -->
+<div id="zone-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;" onclick="closeZonePicker()">
+  <div style="background:var(--card);border-radius:14px;padding:24px;width:min(92vw,380px);max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <p style="font-weight:700;font-size:1rem;margin-bottom:14px;">💴 エリア・オプション選択</p>
+
+    <label style="display:block;font-size:.82rem;color:var(--text2);margin-bottom:4px;">配送エリア</label>
+    <select id="zp-zone" onchange="updateZonePicker()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-family:var(--sans);font-size:.9rem;margin-bottom:14px;">
+      <option value="A">A — 札幌市内　¥5,500</option>
+      <option value="B">B — 近郊エリア　¥15,500</option>
+      <option value="C">C — 石狩・小樽方面　¥20,500</option>
+      <option value="D">D — 旭川・苫小牧方面　¥27,800</option>
+      <option value="E">E — 帯広・富良野方面　¥33,500</option>
+      <option value="F">F — 函館・釧路方面　¥43,500</option>
+      <option value="G">G — 稚内・根室方面　¥49,800</option>
+      <option value="H">H — 道外　¥59,800</option>
+    </select>
+
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:8px;">オプション</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="zp-night1" onchange="updateZonePicker()"> 夜間（18〜21時）+¥1,500
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="zp-night2" onchange="updateZonePicker()"> 深夜（21〜24時）+¥3,000
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="zp-time" onchange="updateZonePicker()"> 時間指定（その他）+¥1,000
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="zp-heavy1" onchange="updateZonePicker()"> 重量物（30〜50kg）+¥5,000
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="zp-heavy2" onchange="updateZonePicker()"> 重量物（50kg超）→個別見積もり
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="zp-okioki" onchange="updateZonePicker()"> 積み置き（1日）+エリア料金×1
+      </label>
+    </div>
+
+    <div id="zp-total" style="text-align:right;font-size:1rem;padding:10px 0;border-top:1px solid var(--border);margin-bottom:14px;">合計: <strong>¥5,500</strong></div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeZonePicker()">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="confirmZonePicker()">確定して内訳を見る</button>
+    </div>
   </div>
 </div>
 </body>

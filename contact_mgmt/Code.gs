@@ -531,21 +531,19 @@ function actionGenerateIcal(body) {
 
 function calcPrice(zone, opts) {
   opts = opts || [];
-  const ZONE_PRICES = { A:5500, B:15500, C:20500, D:27800, E:33500, F:43500, G:49800, H:59800 };
-  const base = ZONE_PRICES[zone] || 0;
-  const OPTIONS = {
-    "夜間（18〜21時）": 1500,
-    "深夜（21〜24時）": 3000,
+  var ZONE_PRICES = { A:5500, B:15500, C:20500, D:27800, E:33500, F:43500, G:49800, H:59800 };
+  var base = ZONE_PRICES[zone] || 0;
+  var OPTIONS = {
+    "夜間（18〜21時）": 1500, "深夜（21〜24時）": 3000,
     "時間指定（その他）": 1000,
-    "重量物（30〜50kg）": 5000,
-    "重量物（50kg超）": 0,
+    "重量物（30〜50kg）": 5000, "重量物（50kg超）": 0,
     "積み置き（1日）": base
   };
-  const optAmounts = {};
-  opts.forEach(o => { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
-  const total = base + Object.values(optAmounts).reduce((s, v) => s + v, 0);
-  const note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
-  return { base, optAmounts, total, note };
+  var optAmounts = {};
+  opts.forEach(function(o) { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
+  var total = base + Object.values(optAmounts).reduce(function(s, v) { return s + v; }, 0);
+  var note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
+  return { base: base, optAmounts: optAmounts, total: total, note: note };
 }
 
 // ─── アクション: LINE受付 ─────────────────────────────────────
