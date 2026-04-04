@@ -529,20 +529,17 @@ function actionGenerateIcal(body) {
 
 // ─── 料金計算 ─────────────────────────────────────────────────
 
-function calcPrice(distKm, opts) {
+function calcPrice(zone, opts) {
   opts = opts || [];
-  let base = 0;
-  const rates = [[5,1500],[10,2500],[20,3500],[30,4500],[999,5000]];
-  for (const [max, rate] of rates) {
-    if (distKm <= max) { base = rate; break; }
-  }
-  if (distKm > 30) base = 5000 + Math.floor((distKm - 30) * 100);
-
+  const ZONE_PRICES = { A:5500, B:15500, C:20500, D:27800, E:33500, F:43500, G:49800, H:59800 };
+  const base = ZONE_PRICES[zone] || 0;
   const OPTIONS = {
-    "夜間（20〜22時）": 1500, "深夜（22〜24時）": 3000,
+    "夜間（18〜21時）": 1500,
+    "深夜（21〜24時）": 3000,
     "時間指定（その他）": 1000,
-    "重量物（30〜50kg）": 500, "重量物（50kg超）": 0,
-    "積み置き（1日）": 1500
+    "重量物（30〜50kg）": 5000,
+    "重量物（50kg超）": 0,
+    "積み置き（1日）": base
   };
   const optAmounts = {};
   opts.forEach(o => { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
