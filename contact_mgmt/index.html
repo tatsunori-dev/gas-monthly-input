@@ -1882,20 +1882,30 @@ function buildMessageCard(msg) {
   const content = escHtml(msg.content     || "");
   const created = fmtDt(msg.created_at);
   const p       = parseLineSummary(msg.content || "");
-  const conflicts = checkConflicts(p.date, p.time);
+  const mv      = msg._manual || {};
+  // 手動入力値を優先して表示。手動入力がある項目は ✏️ で区別
+  var disp = function(manualVal, parsedVal) { return manualVal || parsedVal || ""; };
+  var tag  = function(manualVal, parsedVal) { return manualVal ? ' <span style="font-size:.7rem;color:var(--accent);">✏️</span>' : ""; };
+  const useDate = mv.date || p.date;
+  const useTime = mv.time || p.time;
+  const conflicts = checkConflicts(useDate, useTime);
 
   const conflictHtml = conflicts.length
     ? '<div class="alert alert-warn" style="margin:8px 0;font-size:.8rem;">⚠️ 近い案件あり: ' + conflicts.map(function(c){ return escHtml(c.name||"不明") + " 様"; }).join(", ") + '</div>'
     : '<div class="alert alert-success" style="margin:8px 0;font-size:.78rem;padding:6px 10px;">✅ スケジュール重複なし</div>';
 
+  var fr = function(label, manualVal, parsedVal) {
+    var val = disp(manualVal, parsedVal);
+    return val ? '<div class="field-row"><span class="field-label">' + label + '</span><span class="field-val">' + escHtml(val) + tag(manualVal, parsedVal) + '</span></div>' : "";
+  };
   const summaryHtml = [
-    p.name     ? '<div class="field-row"><span class="field-label">氏名</span><span class="field-val">' + escHtml(p.name) + '</span></div>' : "",
-    p.date     ? '<div class="field-row"><span class="field-label">日付</span><span class="field-val">' + escHtml(p.date) + '</span></div>' : "",
-    p.time     ? '<div class="field-row"><span class="field-label">時間</span><span class="field-val">' + escHtml(p.time) + '</span></div>' : "",
-    p.pickup   ? '<div class="field-row"><span class="field-label">集荷</span><span class="field-val">' + escHtml(p.pickup) + '</span></div>' : "",
-    p.delivery ? '<div class="field-row"><span class="field-label">配達先</span><span class="field-val">' + escHtml(p.delivery) + '</span></div>' : "",
-    p.cargo    ? '<div class="field-row"><span class="field-label">荷物</span><span class="field-val">' + escHtml(p.cargo) + '</span></div>' : "",
-    p.tel      ? '<div class="field-row"><span class="field-label">電話</span><span class="field-val">' + escHtml(p.tel) + '</span></div>' : "",
+    fr("氏名",  mv.name,     p.name),
+    fr("日付",  mv.date,     p.date),
+    fr("時間",  mv.time,     p.time),
+    fr("集荷",  mv.pickup,   p.pickup),
+    fr("配達先",mv.delivery, p.delivery),
+    fr("荷物",  mv.cargo,    p.cargo),
+    fr("電話",  mv.tel,      p.tel),
   ].filter(Boolean).join("");
 
   var effectiveAmount = msg.amount != null ? msg.amount : (p.price || null);
