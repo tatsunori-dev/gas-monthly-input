@@ -580,121 +580,8 @@ let deliveryRows          = [];
 let inquiryRows           = [];
 let archivedInquiryRows   = [];
 let confirmedRows         = [];
-let distCache = {};     // rid -> km（後方互換のため残す）
-let estimateCache = {}; // rid -> {zone, total}
+let distCache = {};  // rid -> km
 let showingArchive = false;
-
-// ─── ゾーン料金定数 ────────────────────────────────────
-var ZONE_PRICES = { A:5500, B:15500, C:20500, D:27800, E:33500, F:43500, G:49800, H:59800 };
-
-function calcEstimate(zone, opts) {
-  opts = opts || [];
-  var base = ZONE_PRICES[zone] || 0;
-  var OPTIONS = {
-    "夜間（18〜21時）": 1500,
-    "深夜（21〜24時）": 3000,
-    "時間指定（その他）": 1000,
-    "重量物（30〜50kg）": 5000,
-    "重量物（50kg超）": 0,
-    "積み置き（1日）": base
-  };
-  var optAmounts = {};
-  opts.forEach(function(o) { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
-  var total = base + Object.values(optAmounts).reduce(function(s, v) { return s + v; }, 0);
-  var note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
-  return { base: base, optAmounts: optAmounts, total: total, note: note };
-}
-
-// ─── ゾーンピッカー ────────────────────────────────────
-var zpSource   = null;   // "delivery" | "manual" | "board"
-var zpSourceId = null;   // rid (deliveryの場合)
-var zpInitOpts = [];     // 初期オプション
-
-function openEstimateModal(source, id, zone, opts) {
-  zpSource   = source;
-  zpSourceId = id;
-  zpInitOpts = opts || [];
-  var modal = document.getElementById("zone-picker-modal");
-  if (!modal) return;
-  var zoneEl = document.getElementById("zp-zone");
-  if (zoneEl) zoneEl.value = zone || "A";
-  // オプション初期化
-  var optMap = {
-    "夜間（18〜21時）":    "zp-night1",
-    "深夜（21〜24時）":   "zp-night2",
-    "時間指定（その他）":  "zp-time",
-    "重量物（30〜50kg）":  "zp-heavy1",
-    "重量物（50kg超）":   "zp-heavy2",
-    "積み置き（1日）":    "zp-okioki"
-  };
-  Object.values(optMap).forEach(function(cbId) {
-    var cb = document.getElementById(cbId);
-    if (cb) cb.checked = false;
-  });
-  zpInitOpts.forEach(function(o) {
-    var cbId = optMap[o];
-    var cb = cbId ? document.getElementById(cbId) : null;
-    if (cb) cb.checked = true;
-  });
-  updateZonePicker();
-  modal.style.display = "flex";
-}
-
-function closeZonePicker() {
-  var modal = document.getElementById("zone-picker-modal");
-  if (modal) modal.style.display = "none";
-}
-
-function updateZonePicker() {
-  var zone = (document.getElementById("zp-zone") || {}).value || "A";
-  var opts = [];
-  if ((document.getElementById("zp-night1") || {}).checked)  opts.push("夜間（18〜21時）");
-  if ((document.getElementById("zp-night2") || {}).checked)  opts.push("深夜（21〜24時）");
-  if ((document.getElementById("zp-time")   || {}).checked)  opts.push("時間指定（その他）");
-  if ((document.getElementById("zp-heavy1") || {}).checked)  opts.push("重量物（30〜50kg）");
-  if ((document.getElementById("zp-heavy2") || {}).checked)  opts.push("重量物（50kg超）");
-  if ((document.getElementById("zp-okioki") || {}).checked)  opts.push("積み置き（1日）");
-  var est = calcEstimate(zone, opts);
-  var totalEl = document.getElementById("zp-total");
-  if (totalEl) totalEl.innerHTML = est.note
-    ? '<span style="font-size:.78rem;color:var(--accent);">' + est.note + '</span>'
-    : '合計: <strong>¥' + est.total.toLocaleString() + '</strong>';
-}
-
-function confirmZonePicker() {
-  var zone = (document.getElementById("zp-zone") || {}).value || "A";
-  var opts = [];
-  if ((document.getElementById("zp-night1") || {}).checked)  opts.push("夜間（18〜21時）");
-  if ((document.getElementById("zp-night2") || {}).checked)  opts.push("深夜（21〜24時）");
-  if ((document.getElementById("zp-time")   || {}).checked)  opts.push("時間指定（その他）");
-  if ((document.getElementById("zp-heavy1") || {}).checked)  opts.push("重量物（30〜50kg）");
-  if ((document.getElementById("zp-heavy2") || {}).checked)  opts.push("重量物（50kg超）");
-  if ((document.getElementById("zp-okioki") || {}).checked)  opts.push("積み置き（1日）");
-  var est = calcEstimate(zone, opts);
-  if (zpSourceId) estimateCache[zpSourceId] = { zone: zone, total: est.total };
-  // 内訳モーダル表示
-  var rows = [["基本料金（ゾーン" + zone + "）", est.base]];
-  Object.entries(est.optAmounts).forEach(function(e) { rows.push([e[0], e[1]]); });
-  rows.push(["合計", est.total]);
-  var tableHtml = rows.map(function(r, i) {
-    var isTot = i === rows.length - 1;
-    return '<div style="display:flex;justify-content:space-between;padding:6px 0;'
-      + (isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);')
-      + '"><span>' + r[0] + '</span><span>¥' + r[1].toLocaleString() + '</span></div>';
-  }).join("");
-  var noteHtml = est.note ? '<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">' + est.note + '</p>' : "";
-  document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
-  closeZonePicker();
-  document.getElementById("estimate-modal").style.display = "flex";
-  // 返信テンプレ更新
-  if (zpSourceId) {
-    var tmplEl = document.getElementById("reply-tmpl-" + zpSourceId);
-    if (tmplEl) {
-      var priceStr = "¥" + est.total.toLocaleString();
-      tmplEl.value = tmplEl.value.replace(/概算料金は .+? となります/, "概算料金は " + priceStr + " となります");
-    }
-  }
-}
 
 // ══════════════════════════════════════════════════════
 // GAS 呼び出し
@@ -997,7 +884,28 @@ function routeLink(a, b) {
   return "https://www.google.com/maps/dir/" + encodeURIComponent(a) + "/" + encodeURIComponent(b);
 }
 
-// calcEstimate / calcPrice はスクリプト先頭のゾーン版を使用
+function calcPrice(km, opts) {
+  return calcEstimate(km, opts).total;
+}
+
+function calcEstimate(km, opts) {
+  opts = opts || [];
+  let base = 0;
+  const rates = [[5,1500],[10,2500],[20,3500],[30,4500],[999,5000]];
+  for (const [max, rate] of rates) { if (km <= max) { base = rate; break; } }
+  if (km > 30) base = 5000 + Math.floor((km - 30) * 100);
+  const OPTIONS = {
+    "夜間（20〜22時）": 1500, "深夜（22〜24時）": 3000,
+    "時間指定（その他）": 1000,
+    "重量物（30〜50kg）": 500, "重量物（50kg超）": 0,
+    "積み置き（1日）": 1500
+  };
+  const optAmounts = {};
+  opts.forEach(o => { if (OPTIONS[o] !== undefined) optAmounts[o] = OPTIONS[o]; });
+  const total = base + Object.values(optAmounts).reduce((s, v) => s + v, 0);
+  const note = opts.includes("重量物（50kg超）") ? "50kg超は個別見積もりとなります。" : "";
+  return { base, optAmounts, total, note };
+}
 
 function getOptsFromRecord(rec) {
   const opts = [];
@@ -1012,20 +920,48 @@ function getOptsFromRecord(rec) {
   return opts;
 }
 
-function showEstimate(id) {
-  var rec = deliveryRows.find(function(r) { return r.id === id; });
+async function showEstimate(id) {
+  const rec = deliveryRows.find(r => r.id === id);
   if (!rec) return;
-  var opts   = getOptsFromRecord(rec);
-  var cached = estimateCache[id];
-  openEstimateModal("delivery", id, cached ? cached.zone : null, opts);
+  const pickup   = rec.pickup_address   || "";
+  const delivery = rec.delivery_address || "";
+  const loadingEl = document.getElementById("estimate-loading-" + id);
+  if (loadingEl) loadingEl.style.display = "block";
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (!res.ok || res.dist == null) { alert("距離を取得できませんでした"); return; }
+    const km = res.dist;
+    distCache[id] = km;
+    const opts = getOptsFromRecord(rec);
+    const est  = calcEstimate(km, opts);
+    // モーダル表示
+    const rows = [["基本料金（" + km + " km）", est.base]];
+    Object.entries(est.optAmounts).forEach(([k, v]) => rows.push([k, v]));
+    rows.push(["合計", est.total]);
+    const tableHtml = rows.map((r, i) => {
+      const isTot = i === rows.length - 1;
+      return `<div style="display:flex;justify-content:space-between;padding:6px 0;${isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);'}">`
+        + `<span>${r[0]}</span><span>¥${r[1].toLocaleString()}</span></div>`;
+    }).join("");
+    const noteHtml = est.note ? `<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">${est.note}</p>` : "";
+    document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
+    document.getElementById("estimate-modal").style.display = "flex";
+    // テンプレ自動反映
+    const tmplEl = document.getElementById("reply-tmpl-" + id);
+    if (tmplEl) {
+      const priceStr = "¥" + est.total.toLocaleString();
+      tmplEl.value = tmplEl.value.replace(/概算料金は .+? となります/, "概算料金は " + priceStr + " となります");
+    }
+  } catch(e) { alert("エラー: " + e.message); }
+  finally { if (loadingEl) loadingEl.style.display = "none"; }
 }
 
 function buildReplyTemplate(rec, formType) {
   const name = rec.name || "お客様";
   const inquiry = rec.inquiry_type || "ご質問";
   if (formType === "delivery") {
-    const cached = estimateCache[rec.id];
-    const priceStr = cached ? "¥" + cached.total.toLocaleString() : "（後ほど連絡）";
+    const distKm = distCache[rec.id];
+    const priceStr = distKm ? "¥" + calcPrice(distKm).toLocaleString() : "（後ほど連絡）";
     return `${name} 様\n\nこの度はTEMCへのご依頼、ありがとうございます。\n\n配送依頼を確認いたしました。\n概算料金は ${priceStr} となります。\n\nご確認いただけましたら、お振込先をご案内いたします。\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 090-5780-6059`;
   } else {
     return `${name} 様\n\nこの度はTEMCへのお問い合わせ、ありがとうございます。\n\n${inquiry}の件、確認いたしました。\n担当者より改めてご連絡いたします。\n\nご不明な点はお気軽にご連絡ください。\n\nTEMC / 090-5780-6059`;
@@ -1211,7 +1147,10 @@ async function fetchDist(id, pickup, delivery) {
     const res = await callGas({ action: "getDistance", token, pickup, delivery });
     if (res.ok && res.dist != null) {
       distCache[id] = res.dist;
-      el.innerHTML = '<div class="metric"><div class="metric-label">距離</div><div class="metric-val">' + res.dist + ' km</div></div>';
+      const km = res.dist;
+      const price = calcPrice(km);
+      el.innerHTML = `<div class="metric"><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
+        <div class="metric"><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>`;
     } else {
       el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
     }
@@ -1409,7 +1348,9 @@ function buildBoardCard(rec) {
         </div>
         <div>
           <div id="board-dist-${id}">
-            <button class="btn btn-secondary btn-sm" onclick="openEstimateModal('board',${id},estimateCache[${id}]?estimateCache[${id}].zone:null,[])">💴 見積もりを出す</button>
+            ${pickup && delivery
+              ? `<button class="btn btn-secondary btn-sm" onclick="fetchBoardDist(${id},'${escHtml(pickup)}','${escHtml(delivery)}')">📏 距離を計算</button>`
+              : `<span style="font-size:.8rem;color:var(--text3);">住所が揃うと計算できます</span>`}
           </div>
           <hr class="section-sep" style="margin:12px 0;">
           <label>確定金額（円）</label>
@@ -1441,6 +1382,25 @@ function buildBoardCard(rec) {
   </div>`;
 }
 
+async function fetchBoardDist(id, pickup, delivery) {
+  const el = document.getElementById("board-dist-" + id);
+  el.innerHTML = '<div class="spinner" style="width:16px;height:16px;margin:4px 0;"></div>';
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (res.ok && res.dist != null) {
+      distCache[id] = res.dist;
+      const km = res.dist;
+      const price = calcPrice(km);
+      el.innerHTML = `<div class="metric"><div class="metric-label">距離</div><div class="metric-val">${km} km</div></div>
+        <div class="metric"><div class="metric-label">概算料金</div><div class="metric-val">¥${price.toLocaleString()}</div></div>`;
+      // 金額フィールドに自動入力
+      const amountEl = document.getElementById("amount-" + id);
+      if (amountEl && !amountEl.value || amountEl.value == "0") amountEl.value = price;
+    } else {
+      el.innerHTML = '<div class="alert alert-warn">距離計算できませんでした</div>';
+    }
+  } catch(e) { el.innerHTML = '<div class="alert alert-error">' + e.message + '</div>'; }
+}
 
 async function completeDelivery(id) {
   const rec = confirmedRows.find(r => r.id === id);
@@ -1685,14 +1645,34 @@ function openManualRoute() {
   window.open("https://www.google.com/maps/dir/" + encodeURIComponent(pickup) + "/" + encodeURIComponent(delivery), "_blank");
 }
 
-function showManualEstimate() {
-  var weightEl = document.getElementById("m-weight");
-  var opts = [];
-  if (weightEl) {
-    if (weightEl.value === "heavy1") opts.push("重量物（30〜50kg）");
-    if (weightEl.value === "heavy2") opts.push("重量物（50kg超）");
-  }
-  openEstimateModal("manual", null, null, opts);
+async function showManualEstimate() {
+  const pickup   = document.getElementById("m-pickup").value.trim();
+  const delivery = document.getElementById("m-delivery").value.trim();
+  const el = document.getElementById("m-dist-result");
+  if (!pickup || !delivery) { el.innerHTML = '<div class="alert alert-warn">集荷先・配達先を入力してください</div>'; return; }
+  el.innerHTML = '<div style="font-size:.82rem;color:var(--text2);padding:6px 0;">計算中...</div>';
+  try {
+    const res = await callGas({ action: "getDistance", token, pickup, delivery });
+    if (!res.ok || res.dist == null) { el.innerHTML = '<div class="alert alert-warn">距離を取得できませんでした</div>'; return; }
+    const km = res.dist;
+    const weight = document.getElementById("m-weight").value;
+    const opts = [];
+    if (weight === "heavy1") opts.push("重量物（30〜50kg）");
+    if (weight === "heavy2") opts.push("重量物（50kg超）");
+    const est = calcEstimate(km, opts);
+    const rows = [["基本料金（" + km + " km）", est.base]];
+    Object.entries(est.optAmounts).forEach(function(e) { rows.push([e[0], e[1]]); });
+    rows.push(["合計", est.total]);
+    const tableHtml = rows.map(function(r, i) {
+      const isTot = i === rows.length - 1;
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;' + (isTot ? 'border-top:2px solid var(--border);font-weight:700;font-size:1.05rem;' : 'border-bottom:1px dashed var(--border);') + '">'
+        + '<span>' + r[0] + '</span><span>¥' + r[1].toLocaleString() + '</span></div>';
+    }).join("");
+    const noteHtml = est.note ? '<p style="font-size:.78rem;color:var(--accent);margin-top:8px;">' + est.note + '</p>' : "";
+    document.getElementById("estimate-modal-content").innerHTML = tableHtml + noteHtml;
+    document.getElementById("estimate-modal").style.display = "flex";
+    el.innerHTML = "";
+  } catch(e) { el.innerHTML = '<div class="alert alert-error">' + escHtml(e.message) + '</div>'; }
 }
 
 let extraAddrCount = 0;
@@ -2639,53 +2619,6 @@ function showAlert(containerId, type, msg) {
     <p style="font-weight:700;font-size:1rem;margin-bottom:12px;">💴 見積もり内訳</p>
     <div id="estimate-modal-content"></div>
     <button class="btn btn-secondary" style="width:100%;margin-top:14px;" onclick="document.getElementById('estimate-modal').style.display='none'">閉じる</button>
-  </div>
-</div>
-<!-- ===== ゾーンピッカーモーダル ===== -->
-<div id="zone-picker-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;" onclick="closeZonePicker()">
-  <div style="background:var(--card);border-radius:14px;padding:24px;width:min(92vw,380px);max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
-    <p style="font-weight:700;font-size:1rem;margin-bottom:14px;">💴 エリア・オプション選択</p>
-
-    <label style="display:block;font-size:.82rem;color:var(--text2);margin-bottom:4px;">配送エリア</label>
-    <select id="zp-zone" onchange="updateZonePicker()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-family:var(--sans);font-size:.9rem;margin-bottom:14px;">
-      <option value="A">A — 札幌市内　¥5,500</option>
-      <option value="B">B — 近郊エリア　¥15,500</option>
-      <option value="C">C — 石狩・小樽方面　¥20,500</option>
-      <option value="D">D — 旭川・苫小牧方面　¥27,800</option>
-      <option value="E">E — 帯広・富良野方面　¥33,500</option>
-      <option value="F">F — 函館・釧路方面　¥43,500</option>
-      <option value="G">G — 稚内・根室方面　¥49,800</option>
-      <option value="H">H — 道外　¥59,800</option>
-    </select>
-
-    <p style="font-size:.82rem;color:var(--text2);margin-bottom:8px;">オプション</p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
-        <input type="checkbox" id="zp-night1" onchange="updateZonePicker()"> 夜間（18〜21時）+¥1,500
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
-        <input type="checkbox" id="zp-night2" onchange="updateZonePicker()"> 深夜（21〜24時）+¥3,000
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
-        <input type="checkbox" id="zp-time" onchange="updateZonePicker()"> 時間指定（その他）+¥1,000
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
-        <input type="checkbox" id="zp-heavy1" onchange="updateZonePicker()"> 重量物（30〜50kg）+¥5,000
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
-        <input type="checkbox" id="zp-heavy2" onchange="updateZonePicker()"> 重量物（50kg超）→個別見積もり
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer;">
-        <input type="checkbox" id="zp-okioki" onchange="updateZonePicker()"> 積み置き（1日）+エリア料金×1
-      </label>
-    </div>
-
-    <div id="zp-total" style="text-align:right;font-size:1rem;padding:10px 0;border-top:1px solid var(--border);margin-bottom:14px;">合計: <strong>¥5,500</strong></div>
-
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-secondary" style="flex:1;" onclick="closeZonePicker()">キャンセル</button>
-      <button class="btn btn-primary" style="flex:1;" onclick="confirmZonePicker()">確定して内訳を見る</button>
-    </div>
   </div>
 </div>
 </body>
