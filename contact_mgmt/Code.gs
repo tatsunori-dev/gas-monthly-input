@@ -271,6 +271,8 @@ function actionSubmitHPForm(body) {
   const inserted = sbInsert(TBL, row);
   // LINE通知
   try { sendLineNotificationFromCode(formType, row); } catch(e) { Logger.log("LINE通知失敗: " + e.message); }
+  // 自動返信メール（メールアドレスがある場合のみ）
+  try { sendAutoReplyFromCode(formType, row); } catch(e) { Logger.log("自動返信メール失敗: " + e.message); }
   return { ok: true, id: inserted.id };
 }
 
@@ -290,6 +292,79 @@ function sendLineNotificationFromCode(formType, record) {
     headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
     payload: JSON.stringify({ to: userId, messages: [{ type: "text", text: msg }] }),
     muteHttpExceptions: true
+  });
+}
+
+function sendAutoReplyFromCode(formType, record) {
+  const email = record.email;
+  if (!email) return;
+
+  const name        = record.name || "お客様";
+  const isDelivery  = formType === "delivery";
+  const tel         = PROPS.getProperty("NOTIFY_TEL")        || "";
+  const lineUrl     = PROPS.getProperty("LINE_OFFICIAL_URL") || "";
+  const myEmail     = PROPS.getProperty("CONTACT_EMAIL")     || "";
+
+  const subject = isDelivery
+    ? "【自動返信】配送依頼を受け付けました｜TEMC"
+    : "【自動返信】お問い合わせを受け付けました｜TEMC";
+
+  const footer = [
+    "─────────────────",
+    "TEMC（テムシー）",
+    "代表 松本 辰則",
+    myEmail  ? "Email：" + myEmail  : "",
+    tel      ? "TEL：" + tel        : "",
+    lineUrl  ? "LINE：" + lineUrl   : "",
+    "─────────────────",
+  ].filter(Boolean).join("\n");
+
+  const bodyLines = isDelivery ? [
+    name + " 様",
+    "",
+    "配送のご依頼ありがとうございます。",
+    "TEMC（テムシー）の松本です。",
+    "",
+    "このメールは自動送信されています。",
+    "いただいた内容を確認の上、見積もり金額をご連絡いたします。",
+    "",
+    "━━━━━━━━━━━━━━━━━━",
+    "■ 見積もりのご連絡目安",
+    "当日〜翌営業日中にご連絡いたします。",
+    "",
+    "■ 確認事項がある場合",
+    "詳細確認のため、先にご連絡する場合がございます。",
+    tel ? "■ お急ぎの場合\n📞 " + tel + "（受付時間：9:00〜21:00）" : "",
+    "━━━━━━━━━━━━━━━━━━",
+    "",
+    "引き続きよろしくお願いいたします。",
+    "",
+    footer,
+  ] : [
+    name + " 様",
+    "",
+    "お問い合わせいただきありがとうございます。",
+    "TEMC（テムシー）の松本です。",
+    "",
+    "このメールは自動送信されています。",
+    "内容を確認の上、担当者よりご連絡いたします。",
+    "",
+    "━━━━━━━━━━━━━━━━━━",
+    "■ ご返信の目安",
+    "当日〜翌営業日中にご連絡いたします。",
+    tel ? "■ お急ぎの場合\n📞 " + tel + "（受付時間：9:00〜21:00）" : "",
+    "━━━━━━━━━━━━━━━━━━",
+    "",
+    "どうぞよろしくお願いいたします。",
+    "",
+    footer,
+  ];
+
+  MailApp.sendEmail({
+    to:      email,
+    subject: subject,
+    body:    bodyLines.filter(l => l !== "").join("\n"),
+    name:    "TEMC 松本",
   });
 }
 
