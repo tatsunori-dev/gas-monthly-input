@@ -1937,14 +1937,23 @@ function buildMessageCard(msg) {
 async function acceptMsg(id) {
   const msg = lineMessages.find(m => m.id === id);
   if (!msg) return;
-  const p = parseLineSummary(msg.content || "");
+  const p  = parseLineSummary(msg.content || "");
+  const mv = msg._manual || {};
+  // 手動入力値を優先、なければパース値を使用
+  const useName     = mv.name     || p.name     || null;
+  const useTel      = mv.tel      || p.tel      || null;
+  const usePickup   = mv.pickup   || p.pickup   || null;
+  const useDelivery = mv.delivery || p.delivery || null;
+  const useCargo    = mv.cargo    || p.cargo    || null;
+  const useDate     = mv.date     || p.date;
+  const useTime     = mv.time     || p.time;
   const year = new Date().getFullYear();
-  const dm = p.date && p.date.match(/(\d{1,2})[\/月](\d{1,2})/);
+  const dm = useDate && useDate.match(/(\d{1,2})[\/月](\d{1,2})/);
   const slots = {A:"09:00",B:"12:00",C:"15:00",D:"17:00"};
   let desired_datetime = null;
   if (dm) {
-    const tm = p.time && p.time.match(/([A-Da-d])枠/i);
-    const hm = !tm && p.time && (p.time.match(/(\d{1,2})時/) || p.time.match(/^(\d{1,2})\s*[-〜ー]/));
+    const tm = useTime && useTime.match(/([A-Da-d])枠/i);
+    const hm = !tm && useTime && (useTime.match(/(\d{1,2})時/) || useTime.match(/^(\d{1,2})\s*[-〜ー]/));
     const hhmm = tm ? slots[tm[1].toUpperCase()] : (hm ? `${parseInt(hm[1]).toString().padStart(2,"0")}:00` : "00:00");
     desired_datetime = new Date(year, parseInt(dm[1])-1, parseInt(dm[2]),
       parseInt(hhmm.split(":")[0]), parseInt(hhmm.split(":")[1])).toISOString();
@@ -1954,11 +1963,11 @@ async function acceptMsg(id) {
   var amountVal = amountInput ? parseInt(amountInput.value, 10) : NaN;
   var amountToSend = !isNaN(amountVal) && amountVal > 0 ? amountVal : (p.price || null);
   const row = {
-    name:             p.name    || null,
-    tel:              p.tel     || null,
-    pickup_address:   p.pickup  || null,
-    delivery_address: p.delivery|| null,
-    cargo_info:       p.cargo   || null,
+    name:             useName,
+    tel:              useTel,
+    pickup_address:   usePickup,
+    delivery_address: useDelivery,
+    cargo_info:       useCargo,
     desired_datetime: desired_datetime,
     contact_method:   "LINE",
     note:             priceNote,
@@ -2013,18 +2022,32 @@ function showLineEditForm(id) {
   var msg = lineMessages.find(function(m) { return m.id === id; });
   if (!msg) return;
   var p = parseLineSummary(msg.content || "");
+  var mv = msg._manual || {};
   var curAmount = document.getElementById("line-amount-" + id) ? document.getElementById("line-amount-" + id).value : (msg.amount || "");
   var areaEl = document.getElementById("line-edit-area-" + id);
   if (!areaEl) return;
   // すでに表示中なら閉じる
   if (areaEl.style.display === "block") { areaEl.style.display = "none"; return; }
   areaEl.style.display = "block";
+  var inpStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.85rem;width:100%;box-sizing:border-box;';
+  var lbStyle  = 'font-size:.76rem;color:var(--text2);display:block;margin-bottom:3px;';
+  var fgStyle  = 'margin-bottom:8px;';
+  var mkInp = function(suffix, label, val, type) {
+    return '<div style="' + fgStyle + '"><label style="' + lbStyle + '">' + label + '</label>'
+      + '<input type="' + (type || "text") + '" id="le-' + suffix + '-' + id + '" value="' + escHtml(String(val || "")) + '" style="' + inpStyle + '"></div>';
+  };
   areaEl.innerHTML = ''
     + '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:10px;">'
-    +   '<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:10px;">✏️ 金額・備考を編集</div>'
-    +   '<div class="form-group"><label>金額（円）</label>'
-    +     '<input type="number" id="le-amount-' + id + '" value="' + escHtml(String(curAmount)) + '" min="0" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.88rem;width:100%;">'
-    +   '</div>'
+    +   '<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:10px;">✏️ 手動入力・編集</div>'
+    +   '<div style="font-size:.75rem;color:var(--text2);margin-bottom:10px;">LINEから取得できなかった項目を直接入力してください。入力した値は受注時に優先されます。</div>'
+    +   mkInp('name',     '氏名',                   mv.name     || p.name)
+    +   mkInp('tel',      '電話番号',               mv.tel      || p.tel,      'tel')
+    +   mkInp('pickup',   '集荷先',                 mv.pickup   || p.pickup)
+    +   mkInp('delivery', '配達先',                 mv.delivery || p.delivery)
+    +   mkInp('date',     '希望日付（例: 4/10）',    mv.date     || p.date)
+    +   mkInp('time',     '希望時間（例: 14時〜）',  mv.time     || p.time)
+    +   mkInp('cargo',    '荷物情報',               mv.cargo    || p.cargo)
+    +   mkInp('amount',   '金額（円）',              curAmount,                 'number')
     +   '<div id="le-result-' + id + '" style="margin-bottom:8px;"></div>'
     +   '<div style="display:flex;gap:8px;">'
     +     '<button class="btn btn-primary btn-sm" onclick="saveLineEditForm(\'' + id + '\')">💾 保存</button>'
@@ -2034,11 +2057,15 @@ function showLineEditForm(id) {
 }
 
 async function saveLineEditForm(id) {
-  var amountRaw  = document.getElementById("le-amount-" + id) ? document.getElementById("le-amount-" + id).value : "";
-  var noteVal    = document.getElementById("le-note-"   + id) ? document.getElementById("le-note-"   + id).value.trim() : "";
+  var gv = function(suffix) {
+    var el = document.getElementById("le-" + suffix + "-" + id);
+    return el ? el.value.trim() : "";
+  };
+  var amountRaw    = gv("amount");
   var amountParsed = amountRaw !== "" ? parseInt(amountRaw, 10) : null;
-  var resultEl = document.getElementById("le-result-" + id);
+  var resultEl     = document.getElementById("le-result-" + id);
 
+  // messages テーブルには金額のみ保存
   var updates = {};
   if (amountParsed !== null && !isNaN(amountParsed)) updates.amount = amountParsed;
 
@@ -2047,11 +2074,20 @@ async function saveLineEditForm(id) {
   try {
     var res = await callGas({ action: "updateLineMessage", token: token, id: id, updates: updates });
     if (res.ok) {
-      // キャッシュ更新 → 再描画
+      // 手動入力値をキャッシュに保存（受注時に優先使用）
       lineMessages = lineMessages.map(function(m) {
         if (m.id !== id) return m;
         var updated = Object.assign({}, m);
         if (amountParsed !== null && !isNaN(amountParsed)) updated.amount = amountParsed;
+        updated._manual = {
+          name:     gv("name"),
+          tel:      gv("tel"),
+          pickup:   gv("pickup"),
+          delivery: gv("delivery"),
+          date:     gv("date"),
+          time:     gv("time"),
+          cargo:    gv("cargo"),
+        };
         return updated;
       });
       renderMessages();
