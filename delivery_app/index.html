@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <link rel="icon" type="image/png" href="data:image/png;base64,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">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="配達">
+<title>TEMC 配達</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --green:   #10b981;
+  --red:     #ef4444;
+  --pink:    #ec4899;
+  --cyan:    #06b6d4;
+  --bg:      #f1f5f9;
+  --card:    #ffffff;
+  --border:  #e2e8f0;
+  --text1:   #1e293b;
+  --text2:   #64748b;
+  --text3:   #cbd5e1;
+  --header-h: 52px;
+  --tab-h:    52px;
+  --sheet-min: 180px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg);
+  font-family: -apple-system, "Helvetica Neue", sans-serif; color: var(--text1); }
+
+/* ─── ローディング ─── */
+#loading-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.35); align-items: center; justify-content: center;
+}
+#loading-overlay.show { display: flex; }
+.spinner { width: 44px; height: 44px; border: 4px solid rgba(255,255,255,.3);
+  border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── ログイン ─── */
+#login-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 32px 24px;
+}
+.login-logo { font-size: 2.4rem; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+.login-sub  { font-size: .9rem; color: var(--text2); margin-bottom: 36px; }
+.login-box  { width: 100%; max-width: 340px; }
+.login-box input {
+  width: 100%; padding: 16px; border: 1.5px solid var(--border);
+  border-radius: 12px; font-size: 1rem; margin-bottom: 12px; outline: none; background: #fff;
+}
+.login-box input:focus { border-color: var(--primary); }
+.btn-login {
+  width: 100%; padding: 16px; background: var(--primary); color: #fff;
+  border: none; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+}
+.login-err { color: var(--red); font-size: .85rem; text-align: center; margin-top: 10px; min-height: 20px; }
+
+/* ─── メインレイアウト ─── */
+#main-screen { display: none; flex-direction: column; height: 100vh; }
+
+/* ─── ヘッダー（1行） ─── */
+.header {
+  background: var(--primary); color: #fff;
+  height: var(--header-h); display: flex; align-items: center; padding: 0 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2); flex-shrink: 0;
+}
+.header-top { display: flex; align-items: center; width: 100%; gap: 8px; }
+.btn-hamburger {
+  background: none; border: none; color: #fff; font-size: 1.2rem;
+  padding: 8px 6px; cursor: pointer; line-height: 1; flex-shrink: 0;
+}
+.header-title { font-size: 1.05rem; font-weight: 800; flex: 1; }
+.summary-pill {
+  background: rgba(255,255,255,.25); border-radius: 20px;
+  padding: 4px 12px; font-size: .82rem; font-weight: 700;
+}
+.btn-refresh {
+  background: rgba(255,255,255,.2); border: none; border-radius: 8px;
+  color: #fff; padding: 7px 11px; font-size: .85rem; cursor: pointer;
+}
+
+/* ─── 日付パネル（ドロップダウン） ─── */
+#date-panel {
+  position: fixed; top: var(--header-h); left: 0; right: 0;
+  background: var(--primary); z-index: 500;
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px 12px;
+  transform: translateY(-110%);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+}
+#date-panel.open { transform: translateY(0); }
+#date-overlay {
+  display: none; position: fixed; inset: 0; z-index: 490;
+}
+#date-overlay.open { display: block; }
+.btn-date {
+  background: rgba(255,255,255,.2); border: none; border-radius: 8px;
+  color: #fff; width: 38px; height: 34px; font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.date-label { font-size: .95rem; font-weight: 700; flex: 1; text-align: center; color: #fff; }
+.btn-today {
+  background: rgba(255,255,255,.25); border: none; border-radius: 8px;
+  color: #fff; padding: 5px 10px; font-size: .8rem; font-weight: 700; cursor: pointer;
+}
+
+/* ─── タブ ─── */
+.tab-bar {
+  display: flex; background: #fff; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; height: var(--tab-h);
+}
+.tab-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; background: none; font-size: .88rem; font-weight: 600; color: var(--text2);
+  cursor: pointer; border-bottom: 3px solid transparent; transition: all .2s;
+}
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-icon { font-size: 1.2rem; }
+
+/* ─── パネル ─── */
+.panel { flex: 1; overflow: hidden; position: relative; display: none; }
+.panel.active { display: block; }
+
+/* ─── リストパネル ─── */
+#list-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.list-inner { padding: 10px 12px 120px; }
+.d-item {
+  background: var(--card); border-radius: 12px; margin-bottom: 10px;
+  border: 1.5px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  cursor: pointer; transition: background .1s;
+}
+.d-item:active { background: var(--bg); }
+.d-num {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--primary);
+  color: #fff; font-weight: 800; font-size: .9rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.d-num.picked { background: #f59e0b; }
+.d-num.done   { background: var(--text3); }
+.d-item-main { flex: 1; min-width: 0; }
+.d-item-time { font-size: .78rem; color: var(--text2); margin-bottom: 2px; }
+.d-item-addr { font-size: .92rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-item-sub  { font-size: .76rem; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge {
+  display: inline-block; border-radius: 6px; padding: 2px 7px;
+  font-size: .7rem; font-weight: 700; color: #fff;
+}
+.badge-hp     { background: var(--red); }
+.badge-line   { background: var(--pink); }
+.badge-hako   { background: var(--cyan); }
+.badge-manual { background: #7c3aed; }
+.d-chevron  { color: var(--text3); font-size: .8rem; }
+.empty-msg  { text-align: center; color: var(--text2); padding: 60px 24px; line-height: 1.8; }
+
+/* ─── マップパネル ─── */
+#map-panel { position: relative; }
+#map { width: 100%; height: 100%; }
+#map { background: #e8ecef; }
+#geocode-status {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.7); color: #fff; font-size: .8rem; font-weight: 600;
+  padding: 6px 14px; border-radius: 20px; z-index: 999; pointer-events: none;
+  display: none;
+}
+
+/* ─── ボトムシート ─── */
+#bottom-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+  background: #fff; border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.18);
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.32,1,.28,1);
+  max-height: 92vh; display: flex; flex-direction: column;
+}
+#bottom-sheet.show   { transform: translateY(calc(100% - var(--sheet-min))); }
+#bottom-sheet.expand { transform: translateY(0); }
+.sheet-handle-wrap {
+  padding: 10px 0 6px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; cursor: grab;
+}
+.sheet-handle { width: 40px; height: 5px; border-radius: 3px; background: var(--border); }
+.sheet-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 40px; }
+
+/* ─── ボトムシート内容 ─── */
+.sheet-header { margin-bottom: 14px; }
+.sheet-num-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; background: var(--primary); color: #fff;
+  border-radius: 50%; font-weight: 800; font-size: .9rem; margin-right: 8px;
+}
+.sheet-title { font-size: 1.05rem; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.sheet-time  { font-size: .85rem; color: var(--text2); }
+.addr-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+.addr-label { font-size: .72rem; color: var(--text2); background: var(--bg); border-radius: 4px; padding: 2px 6px; white-space: nowrap; margin-top: 2px; flex-shrink: 0; }
+.addr-text { font-size: .92rem; font-weight: 600; flex: 1; line-height: 1.5; }
+.btn-gmap {
+  flex-shrink: 0; background: var(--primary); color: #fff;
+  border: none; border-radius: 8px; padding: 6px 10px; font-size: .78rem;
+  font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.info-grid { display: grid; grid-template-columns: 60px 1fr; gap: 6px 8px; margin-bottom: 14px; font-size: .86rem; }
+.info-key   { color: var(--text2); }
+.info-val   { font-weight: 500; }
+.sheet-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ─── アクション起動ボタン（シート下部） ─── */
+.btn-open-action {
+  display: block; width: 100%; margin-top: 16px;
+  background: var(--primary); color: #fff; border: none; border-radius: 14px;
+  padding: 16px; font-size: 1rem; font-weight: 700; cursor: pointer;
+  letter-spacing: .04em;
+}
+/* ─── 電話発信リンク ─── */
+.sheet-tel {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  background: #f0fdf4; border-radius: 10px; padding: 10px 14px;
+  color: #16a34a; font-weight: 700; font-size: .95rem; text-decoration: none;
+}
+
+/* ─── タブバーをアクションページの上に固定 ─── */
+.tab-bar { position: relative; z-index: 400; }
+.header  { position: relative; z-index: 400; }
+
+/* ─── アクションページ（別ページ・スライドイン、ヘッダー+タブの下から） ─── */
+#action-page {
+  position: fixed;
+  top: calc(var(--header-h) + var(--tab-h));
+  left: 0; right: 0; bottom: 0;
+  background: #f8fafc; z-index: 300;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+#action-page.show { transform: translateX(0); }
+.action-page-header {
+  padding: 12px 16px; background: #fff; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-action-back {
+  background: none; border: none; padding: 4px 8px; font-size: .95rem;
+  color: var(--primary); font-weight: 700; cursor: pointer; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.action-page-title { font-weight: 800; font-size: 1rem; flex: 1; text-align: center; }
+.action-page-body { padding: 20px 16px 48px; }
+.action-section-label {
+  font-size: .75rem; font-weight: 700; color: var(--text3);
+  letter-spacing: .05em; margin: 20px 0 8px;
+}
+.btn-map-action {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: #fff; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 14px 16px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-pin-action {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: none; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 14px 16px; font-size: .95rem; color: var(--text2); cursor: pointer; margin-bottom: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── ピン編集ボタン（後方互換） ─── */
+.btn-pin-edit { display: none; }
+.pin-edit-hint { display: none; }
+
+/* ─── スワイプで完了 ─── */
+.swipe-wrap { position: relative; border-radius: 14px; overflow: hidden; height: 60px; margin-top: 8px; user-select: none; }
+.swipe-bg   { position: absolute; inset: 0; background: var(--green); display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; font-weight: 700; color: #fff; }
+.swipe-track {
+  position: absolute; inset: 0; background: #e2e8f0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .95rem; font-weight: 700; color: var(--text2);
+  border-radius: 14px; touch-action: pan-y;
+}
+.swipe-track.done { background: var(--green); color: #fff; pointer-events: none; }
+
+/* ─── ピン編集クロスヘア ─── */
+#pin-crosshair {
+  display: none; position: fixed; inset: 0; z-index: 1200; pointer-events: none;
+}
+#pin-crosshair.active { display: block; }
+.crosshair-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%);
+}
+#pin-confirm-btn {
+  position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--primary); color: #fff; border: none; border-radius: 28px;
+  padding: 14px 36px; font-size: 1rem; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3); pointer-events: all; cursor: pointer;
+}
+#pin-cancel-btn {
+  position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+  background: none; color: var(--text2); border: none; font-size: .85rem;
+  pointer-events: all; cursor: pointer; text-decoration: underline;
+}
+#pin-search-bar {
+  position: absolute; top: 10px; left: 10px; right: 10px;
+  display: flex; gap: 6px; pointer-events: all;
+}
+#pin-search-input {
+  flex: 1; padding: 10px 14px; border-radius: 10px; border: none;
+  font-size: .92rem; box-shadow: 0 2px 8px rgba(0,0,0,.2); outline: none;
+}
+#pin-search-btn {
+  background: var(--primary); color: #fff; border: none; border-radius: 10px;
+  padding: 10px 14px; font-size: 1rem; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+
+/* ─── 削除ボタン ─── */
+.btn-delete-item {
+  background: none; border: none; color: var(--text3); font-size: 1.2rem;
+  padding: 4px 8px; cursor: pointer; flex-shrink: 0;
+}
+.btn-delete-item:active { color: var(--red); }
+
+/* ─── マップ上のピン番号スタイル ─── */
+/* SVGピンを使うためCSSは最小限 */
+.map-pin-svg { filter: drop-shadow(0 3px 6px rgba(0,0,0,.45)); }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+
+<!-- ログイン -->
+<div id="login-screen">
+  <div class="login-logo">TEMC</div>
+  <div class="login-sub">配達アプリ</div>
+  <div class="login-box">
+    <input type="text"     id="lUser" placeholder="ユーザー名" autocomplete="username" autocapitalize="off">
+    <input type="password" id="lPass" placeholder="パスワード" autocomplete="current-password">
+    <button class="btn-login" onclick="doLogin()">ログイン</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- メイン -->
+<div id="main-screen">
+  <!-- ヘッダー（1行） -->
+  <div class="header">
+    <div class="header-top">
+      <button class="btn-hamburger" onclick="toggleDatePanel()">☰</button>
+      <div class="header-title">📦 配達</div>
+      <span class="summary-pill" id="summaryPill">0件</span>
+      <button class="btn-refresh" onclick="loadDeliveries()">↺</button>
+    </div>
+  </div>
+
+  <!-- 日付パネル（ドロップダウン） -->
+  <div id="date-overlay" onclick="closeDatePanel()"></div>
+  <div id="date-panel">
+    <button class="btn-date" onclick="changeDate(-1)">‹</button>
+    <div class="date-label" id="dateLabel"></div>
+    <button class="btn-date" onclick="changeDate(1)">›</button>
+    <button class="btn-today" onclick="goToday(); closeDatePanel()">今日</button>
+  </div>
+
+  <!-- タブ -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-list" onclick="switchTab('list')">
+      <span class="tab-icon">☰</span> リスト
+    </button>
+    <button class="tab-btn" id="tab-map" onclick="switchTab('map')">
+      <span class="tab-icon">🗺</span> マップ
+    </button>
+  </div>
+
+  <!-- リストパネル -->
+  <div class="panel active" id="list-panel">
+    <div class="list-inner" id="list-inner">
+      <div class="empty-msg">読み込み中...</div>
+    </div>
+  </div>
+
+  <!-- マップパネル -->
+  <div class="panel" id="map-panel">
+    <div id="map"></div>
+    <div id="geocode-status">📍 ピンを読み込み中...</div>
+    <!-- ピン位置編集クロスヘア -->
+    <div id="pin-crosshair">
+      <div id="pin-search-bar">
+        <input id="pin-search-input" type="text" placeholder="住所を検索して近くに移動..."
+               onkeydown="if(event.key==='Enter'){searchPinLocation();}">
+        <button id="pin-search-btn" ontouchend="event.preventDefault();event.stopPropagation();searchPinLocation();" onclick="searchPinLocation()">🔍</button>
+      </div>
+      <div class="crosshair-center">
+        <svg width="48" height="60" viewBox="0 0 48 60" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
+          <circle cx="24" cy="20" r="18" fill="#ef4444" stroke="#fff" stroke-width="3"/>
+          <polygon points="24,58 13,34 35,34" fill="#ef4444"/>
+          <line x1="24" y1="0" x2="24" y2="4" stroke="#ef4444" stroke-width="2"/>
+          <line x1="24" y1="36" x2="24" y2="40" stroke="#ef4444" stroke-width="2"/>
+          <line x1="4"  y1="20" x2="8"  y2="20" stroke="#ef4444" stroke-width="2"/>
+          <line x1="40" y1="20" x2="44" y2="20" stroke="#ef4444" stroke-width="2"/>
+        </svg>
+      </div>
+      <button id="pin-confirm-btn" ontouchend="event.preventDefault();event.stopPropagation();confirmPinFromCrosshair();" onclick="confirmPinFromCrosshair()">📍 ここに設定</button>
+      <button id="pin-cancel-btn"  ontouchend="event.preventDefault();event.stopPropagation();cancelPinEdit();" onclick="cancelPinEdit()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ボトムシート -->
+<div id="bottom-sheet">
+  <div class="sheet-handle-wrap" id="sheet-handle">
+    <div class="sheet-handle"></div>
+  </div>
+  <div class="sheet-scroll" id="sheet-content"></div>
+</div>
+
+<!-- アクションページ -->
+<div id="action-page">
+  <div class="action-page-header">
+    <button class="btn-action-back" ontouchend="event.preventDefault(); closeActionPage();" onclick="closeActionPage()">‹ 戻る</button>
+    <span class="action-page-title" id="action-page-title"></span>
+  </div>
+  <div class="action-page-body">
+    <div class="action-section-label">ステータス</div>
+    <div id="action-page-swipe"></div>
+    <div class="action-section-label">ナビゲーション</div>
+    <button class="btn-map-action" id="apage-map-pickup">🗺 集荷先をマップで開く</button>
+    <button class="btn-map-action" id="apage-map-delivery">🗺 配達先をマップで開く</button>
+    <div class="action-section-label">その他</div>
+    <button class="btn-pin-action" id="apage-pin-edit">📍 ピン位置を修正</button>
+  </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=<?!= mapsApiKey ?>&language=ja&region=JP" async></script>
+<script>
+// ══════════════════════════════════════
+// 状態
+// ══════════════════════════════════════
+var token       = "";
+var targetDate  = "";
+var deliveries  = [];   // {id, type:"cr"|"ow", data:{}, num, done, lat, lng}
+var selectedIdx = -1;
+var googleMap   = null;
+var markers     = [];
+var locMarker   = null;
+var geocodeCache = {};  // id -> {lat, lng, edited}
+var pinEditMode  = false;
+var currentTab   = "list";
+
+// ボトムシートドラッグ用
+var sheetDragStart   = 0;
+var sheetExpanded    = false;
+var sheetDragEnabled = true; // ボタンタップ中はfalse（ドラッグ無効）
+
+// ピン編集中のアイテム（closeSheetがselectedIdxをリセットするため別変数で保持）
+var pinEditItem = null;
+
+// スワイプ完了用
+var swipeDragStartX = 0;
+var swipeDragging   = false;
+
+// ══════════════════════════════════════
+// 初期化
+// ══════════════════════════════════════
+window.addEventListener("DOMContentLoaded", function() {
+  // localStorage から読み込み（使えれば即時）
+  try {
+    var saved     = localStorage.getItem("delivery_token");
+    var savedTime = localStorage.getItem("delivery_token_time");
+    if (saved && savedTime && (Date.now() - parseInt(savedTime, 10)) < 12 * 3600 * 1000) {
+      token = saved;
+    }
+  } catch(e) { /* localStorage blocked */ }
+  targetDate = todayStr();
+  if (token) { showMain(); loadDeliveries(); return; }
+  // localStorage になければサーバー側の保存トークンを確認（iOS ホーム画面ショートカット対応）
+  loading(true);
+  callGas({ action: "getAutoToken" }).then(function(res) {
+    loading(false);
+    if (res && res.ok) {
+      token = res.token;
+      try { localStorage.setItem("delivery_token", token); localStorage.setItem("delivery_token_time", Date.now().toString()); } catch(e) {}
+      showMain(); loadDeliveries();
+    }
+    // ok でなければログイン画面のまま
+  }).catch(function() { loading(false); /* ログイン画面のまま */ });
+
+  // ボトムシート全体でドラッグ対応
+  var sheet = document.getElementById("bottom-sheet");
+  sheet.addEventListener("touchstart", onSheetTouchStart, { passive: true });
+  sheet.addEventListener("touchmove",  onSheetTouchMove,  { passive: false });
+  sheet.addEventListener("touchend",   onSheetTouchEnd,   { passive: true });
+
+  // シート外タップで閉じる
+  document.addEventListener("click", function(e) {
+    var sheet = document.getElementById("bottom-sheet");
+    if (!sheet.contains(e.target) && !e.target.closest(".d-item") && !e.target.closest(".map-pin")) {
+      closeSheet();
+    }
+  });
+});
+
+// ══════════════════════════════════════
+// ローディング
+// ══════════════════════════════════════
+function loading(show) {
+  document.getElementById("loading-overlay").classList.toggle("show", !!show);
+}
+
+// ══════════════════════════════════════
+// GAS呼び出し
+// ══════════════════════════════════════
+function callGas(payload) {
+  return new Promise(function(resolve, reject) {
+    if (typeof google === "undefined" || !google.script || !google.script.run) {
+      reject(new Error("google.script.run unavailable")); return;
+    }
+    google.script.run
+      .withSuccessHandler(function(r) { resolve(r); })
+      .withFailureHandler(function(e) { reject(e); })
+      .dispatch(payload.action, payload);
+  });
+}
+
+// ══════════════════════════════════════
+// 認証
+// ══════════════════════════════════════
+function doLogin() {
+  var u = document.getElementById("lUser").value.trim();
+  var p = document.getElementById("lPass").value;
+  if (!u || !p) { document.getElementById("login-err").textContent = "入力してください"; return; }
+  loading(true);
+  callGas({ action: "login", username: u, password: p }).then(function(res) {
+    loading(false);
+    if (res.ok) {
+      token = res.token;
+      try { localStorage.setItem("delivery_token", token); localStorage.setItem("delivery_token_time", Date.now().toString()); } catch(e) {}
+      showMain();
+      loadDeliveries();
+    } else {
+      document.getElementById("login-err").textContent = res.error || "ログイン失敗";
+    }
+  }).catch(function(e) {
+    loading(false);
+    document.getElementById("login-err").textContent = "エラー: " + (e && e.message ? e.message : String(e));
+  });
+}
+
+function showMain() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("main-screen").style.display  = "flex";
+}
+
+// ══════════════════════════════════════
+// 日付操作
+// ══════════════════════════════════════
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + "-" +
+    ("0" + (d.getMonth()+1)).slice(-2) + "-" +
+    ("0" + d.getDate()).slice(-2);
+}
+function formatDateLabel(s) {
+  var d    = new Date(s + "T00:00:00+09:00");
+  var days = ["日","月","火","水","木","金","土"];
+  return (d.getMonth()+1) + "/" + d.getDate() + " (" + days[d.getDay()] + ")" + (s === todayStr() ? " 今日" : "");
+}
+function changeDate(delta) {
+  var d = new Date(targetDate + "T00:00:00+09:00");
+  d.setDate(d.getDate() + delta);
+  targetDate = d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
+  loadDeliveries();
+}
+function goToday() { targetDate = todayStr(); loadDeliveries(); }
+
+// ══════════════════════════════════════
+// データ取得
+// ══════════════════════════════════════
+function loadDeliveries() {
+  document.getElementById("dateLabel").textContent = formatDateLabel(targetDate);
+  closeSheet();
+  loading(true);
+  callGas({ action: "getDeliveries", token: token, date: targetDate }).then(function(res) {
+    loading(false);
+    if (res.error === "unauthorized") { try { localStorage.removeItem("delivery_token"); localStorage.removeItem("delivery_token_time"); } catch(e) {} location.reload(); return; }
+    if (!res.ok) { showListMsg("エラー: " + esc(res.error || "不明")); return; }
+    buildDeliveries(res.cr || [], res.ow || []);
+  }).catch(function(e) {
+    loading(false);
+    showListMsg("エラー: " + esc(e && e.message ? e.message : String(e)));
+  });
+}
+
+function buildDeliveries(crRows, owRows) {
+  var items = [];
+  crRows.forEach(function(r) {
+    items.push({ type:"cr", data:r, sortKey: r.desired_datetime || "9999", done: r.status === "配達完了" });
+  });
+  owRows.forEach(function(r) {
+    var key = r.work_date + "T" + (r.pickup_time || "23:59") + ":00";
+    items.push({ type:"ow", data:r, sortKey: key, done: r.status === "完了" });
+  });
+  items.sort(function(a,b) { return a.sortKey < b.sortKey ? -1 : 1; });
+  items.forEach(function(item, i) { item.num = i + 1; item.id = item.data.id; });
+  deliveries = items;
+
+  document.getElementById("summaryPill").textContent = items.length + "件";
+  renderList();
+  if (currentTab === "map") { initMap(); geocodeAll(); }
+  else { geocodeAll(); }
+}
+
+// ══════════════════════════════════════
+// 日付パネル開閉
+// ══════════════════════════════════════
+function toggleDatePanel() {
+  var panel = document.getElementById("date-panel");
+  var overlay = document.getElementById("date-overlay");
+  var isOpen = panel.classList.contains("open");
+  panel.classList.toggle("open", !isOpen);
+  overlay.classList.toggle("open", !isOpen);
+}
+function closeDatePanel() {
+  document.getElementById("date-panel").classList.remove("open");
+  document.getElementById("date-overlay").classList.remove("open");
+}
+
+// ══════════════════════════════════════
+// タブ切り替え
+// ══════════════════════════════════════
+function switchTab(tab) {
+  // アクションページが開いていたら閉じる
+  document.getElementById("action-page").classList.remove("show");
+  currentTab = tab;
+  document.getElementById("tab-list").classList.toggle("active", tab === "list");
+  document.getElementById("tab-map").classList.toggle("active",  tab === "map");
+  document.getElementById("list-panel").classList.toggle("active", tab === "list");
+  document.getElementById("map-panel").classList.toggle("active",  tab === "map");
+  if (tab === "map") {
+    initMap();
+    geocodeAll();
+    setTimeout(function() { if (googleMap) google.maps.event.trigger(googleMap, "resize"); }, 100);
+  }
+}
+
+// ══════════════════════════════════════
+// リスト描画
+// ══════════════════════════════════════
+function renderList() {
+  if (!deliveries.length) { showListMsg("この日の配達はありません"); return; }
+  var html = deliveries.map(function(item) {
+    var d      = item.type === "cr" ? item.data : null;
+    var o      = item.type === "ow" ? item.data : null;
+    var phase2 = getDeliveryPhase(item);
+    var addr   = d
+      ? (phase2 === "new" ? (d.pickup_address || "—") : (d.delivery_address || "—"))
+      : (o.delivery_location || "—");
+    var time   = d ? formatTime(d.desired_datetime) : (o.pickup_time ? o.pickup_time.slice(0,5) : "—");
+    var name   = d ? (d.name || "") : "";
+    var isLine   = d && ((d.contact_method === "LINE" && d.note && d.note.indexOf("[LINE経由]") >= 0) || (d.pickup_address && d.pickup_address.trim() === "澄川ピック"));
+    var isManual = d && !isLine && ["phone","email","line"].indexOf((d.contact_method || "").toLowerCase()) < 0;
+    var badge    = item.type === "ow" ? "badge-hako ハコベル" : isLine ? "badge-line しょんぴぃ" : isManual ? "badge-manual 手動" : "badge-hp HP";
+    var numCls = phase2 === "done" ? " done" : phase2 === "picked" ? " picked" : "";
+    return '<div class="d-item" onclick="openDetail(' + item.num + ')">' +
+      '<div class="d-num' + numCls + '">' + item.num + '</div>' +
+      '<div class="d-item-main">' +
+        '<div class="d-item-time"><span class="badge ' + badge + '"></span> ' + esc(time) + '</div>' +
+        '<div class="d-item-addr">' + esc(abbrev(addr, 22)) + '</div>' +
+        (name ? '<div class="d-item-sub">' + esc(name) + '</div>' : '') +
+      '</div>' +
+      '<button class="btn-delete-item" onclick="event.stopPropagation();deleteItem(' + item.num + ')">🗑</button>' +
+      '<div class="d-chevron">›</div>' +
+    '</div>';
+  }).join("");
+  document.getElementById("list-inner").innerHTML = html;
+}
+
+function showListMsg(msg) {
+  document.getElementById("list-inner").innerHTML = '<div class="empty-msg">' + msg + '</div>';
+}
+
+// ══════════════════════════════════════
+// マップ初期化
+// ══════════════════════════════════════
+function initMap() {
+  if (googleMap) { refreshMapPins(); return; }
+  if (typeof google === "undefined" || !google.maps) {
+    setTimeout(initMap, 200); return;
+  }
+  googleMap = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 43.0618, lng: 141.3545 },
+    zoom: 12,
+    gestureHandling: "greedy",
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+    zoomControl: true,
+    clickableIcons: false
+  });
+
+  googleMap.addListener("click", function() { closeSheet(); });
+
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function(pos) {
+      var latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!locMarker) {
+        locMarker = new google.maps.Marker({
+          position: latlng, map: googleMap, zIndex: 50,
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10,
+            fillColor: "#3b82f6", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 3 }
+        });
+        fitMapToPins(); // 現在地取得後に全体表示を再調整
+      } else {
+        locMarker.setPosition(latlng);
+      }
+    }, null, { enableHighAccuracy: true });
+  }
+
+  refreshMapPins();
+}
+
+function fitMapToPins() {
+  if (!googleMap) return;
+  var keys = Object.keys(geocodeCache);
+  var hasLoc = locMarker && locMarker.getPosition();
+  if (!keys.length && !hasLoc) return;
+
+  var bounds = new google.maps.LatLngBounds();
+  keys.forEach(function(k) { bounds.extend({ lat: geocodeCache[k].lat, lng: geocodeCache[k].lng }); });
+  if (hasLoc) bounds.extend(locMarker.getPosition());
+
+  var totalPts = keys.length + (hasLoc ? 1 : 0);
+  if (totalPts === 1) {
+    var center = keys.length ? { lat: geocodeCache[keys[0]].lat, lng: geocodeCache[keys[0]].lng } : locMarker.getPosition();
+    googleMap.setCenter(center); googleMap.setZoom(16);
+  } else {
+    googleMap.fitBounds(bounds, 40);
+    google.maps.event.addListenerOnce(googleMap, "bounds_changed", function() {
+      if (googleMap.getZoom() > 16) googleMap.setZoom(16);
+    });
+  }
+}
+
+function refreshMapPins() {
+  markers.forEach(function(m) { if (m) m.setMap(null); });
+  markers = new Array(deliveries.length).fill(null);
+  if (!googleMap) return;
+
+  deliveries.forEach(function(item, i) {
+    var phase  = getDeliveryPhase(item);
+    if (phase === "done") return; // done はピン非表示
+    var key = item.type + "-" + item.id;
+    var geo = geocodeCache[key];
+    if (!geo) return;
+
+    var isSelected = (i === selectedIdx);
+    var color  = isSelected ? "#16a34a" : phase === "picked" ? "#f59e0b" : "#2563eb";
+    var size   = isSelected ? 52 : 44;
+    var r      = size * 0.42;
+    var cx     = size / 2;
+    var circleY = size * 0.42;
+    var svg = '<svg width="' + size + '" height="' + (size+10) + '" viewBox="0 0 ' + size + ' ' + (size+10) + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="' + cx + '" cy="' + circleY + '" r="' + r + '" fill="' + color + '" stroke="#fff" stroke-width="3"/>' +
+      '<polygon points="' + cx + ',' + (size+10) + ' ' + (cx-r*0.55) + ',' + (circleY+r*0.7) + ' ' + (cx+r*0.55) + ',' + (circleY+r*0.7) + '" fill="' + color + '"/>' +
+      '<text x="' + cx + '" y="' + (circleY+5) + '" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-weight="900" font-size="' + Math.round(size*0.32) + '" font-family="-apple-system,sans-serif">' + item.num + '</text>' +
+      '</svg>';
+    var m = new google.maps.Marker({
+      position: { lat: geo.lat, lng: geo.lng },
+      map: googleMap, zIndex: isSelected ? 1000 : i,
+      icon: {
+        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
+        scaledSize: new google.maps.Size(size, size + 10),
+        anchor: new google.maps.Point(size / 2, size + 10)
+      }
+    });
+    (function(num) { m.addListener("click", function() { openDetail(num); }); })(item.num);
+    markers[i] = m;
+  });
+}
+
+// ══════════════════════════════════════
+// ジオコーディング（GASサーバー経由）
+// ══════════════════════════════════════
+// 住所クリーニング（括弧・階数・号室除去）
+var ADDRESS_ALIAS = {
+  "澄川ピック": "しょんぴぃケーキ　澄川"
+};
+
+function cleanAddress(addr) {
+  var s = (addr || "").trim();
+  if (ADDRESS_ALIAS[s]) return ADDRESS_ALIAS[s];
+  return s
+    .replace(/[（(【「][^）)】」]*[）)】」]/g, "")
+    .replace(/[\s　]*\d+[Ff階].*/g, "")
+    .replace(/[\s　]*\d+-\d+号室.*/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+function geocodeAll() {
+  var toGeocode = [];
+  var addrSeen  = {}; // 同住所の重複排除
+  deliveries.forEach(function(item) {
+    var key   = item.type + "-" + item.id;
+    if (geocodeCache[key]) return;
+    var phase = getDeliveryPhase(item);
+    if (phase === "done") return; // done はピン非表示
+    var raw = item.type === "cr"
+      ? (phase === "new" ? (item.data.pickup_address || "") : (item.data.delivery_address || item.data.pickup_address || ""))
+      : (phase === "new" ? (item.data.pickup_location || "") : (item.data.delivery_location || item.data.pickup_location || ""));
+    var addr = cleanAddress(raw);
+    if (!addr) return;
+    // 同じ住所が既に処理済みならキャッシュをコピー
+    if (addrSeen[addr]) { geocodeCache[key] = addrSeen[addr]; return; }
+    toGeocode.push({ key: key, address: addr });
+    addrSeen[addr] = null; // 後で上書き
+  });
+
+  if (!toGeocode.length) {
+    if (googleMap) { refreshMapPins(); fitMapToPins(); }
+    return;
+  }
+
+  var statusEl = document.getElementById("geocode-status");
+  if (statusEl) { statusEl.style.display = "block"; statusEl.textContent = "📍 " + toGeocode.length + "件のピンを読み込み中..."; }
+
+  // GAS Maps（Google）経由で一括ジオコーディング
+  callGas({ action: "geocodeAll", token: token, addresses: toGeocode })
+    .then(function(res) {
+      if (res.ok && res.results) {
+        Object.keys(res.results).forEach(function(k) {
+          geocodeCache[k] = res.results[k];
+        });
+      }
+      var pinCount = Object.keys(geocodeCache).length;
+      if (statusEl) {
+        statusEl.textContent = pinCount > 0 ? "📍 " + pinCount + "件" : "⚠ 住所を取得できませんでした";
+        setTimeout(function() { statusEl.style.display = "none"; }, 3000);
+      }
+      if (googleMap) { refreshMapPins(); fitMapToPins(); }
+    })
+    .catch(function(e) {
+      if (statusEl) { statusEl.textContent = "⚠ " + (e && e.message ? e.message : "エラー"); setTimeout(function() { statusEl.style.display = "none"; }, 4000); }
+      if (googleMap) refreshMapPins();
+    });
+}
+
+// ══════════════════════════════════════
+// 詳細表示（ボトムシート）
+// ══════════════════════════════════════
+function openDetail(num) {
+  var idx = num - 1;
+  if (idx < 0 || idx >= deliveries.length) return;
+  selectedIdx = idx;
+  pinEditMode = false;
+
+  var item = deliveries[idx];
+  var d    = item.type === "cr" ? item.data : null;
+  var o    = item.type === "ow" ? item.data : null;
+
+  var title     = d ? (d.name ? d.name + " 様" : "HP配送依頼") : "ハコベル";
+  var time      = d ? formatDateTime(d.desired_datetime) : (o.pickup_time ? o.pickup_time.slice(0,5) + "〜" + (o.end_time || "").slice(0,5) : "—");
+  var pickup    = d ? (d.pickup_address || "—")   : (o.pickup_location   || "—");
+  var delivery  = d ? (d.delivery_address || "—") : (o.delivery_location || "—");
+  var amount    = d ? (d.amount ? "¥" + Number(d.amount).toLocaleString() : "") : (o.amount ? "¥" + Number(o.amount).toLocaleString() : "");
+  var cargo     = d ? ((d.cargo_info || "") + (d.weight ? " (" + d.weight + ")" : "")) : "";
+  var memo      = d ? (d.note || d.memo || "") : (o.memo || "");
+  var tel       = d ? (d.tel || "") : "";
+  var phase  = getDeliveryPhase(item);
+  var isDone = (phase === "done");
+
+  var isLine   = d && ((d.contact_method === "LINE" && d.note && d.note.indexOf("[LINE経由]") >= 0) || (d.pickup_address && d.pickup_address.trim() === "澄川ピック"));
+  var isManual = d && !isLine && ["phone","email","line"].indexOf((d.contact_method || "").toLowerCase()) < 0;
+  var badgeCls   = item.type === "ow" ? "badge-hako" : isLine ? "badge-line" : isManual ? "badge-manual" : "badge-hp";
+  var badgeLabel = item.type === "ow" ? "ハコベル" : isLine ? "しょんぴぃ" : isManual ? "手動" : "HP";
+
+  var html =
+    '<div class="sheet-header">' +
+      '<div class="sheet-title">' +
+        '<span class="sheet-num-badge">' + item.num + '</span>' +
+        esc(title) + ' <span class="badge ' + badgeCls + '">' + badgeLabel + '</span>' +
+      '</div>' +
+      '<div class="sheet-time">🕐 ' + esc(time) + '</div>' +
+    '</div>' +
+    '<div class="addr-row">' +
+      '<span class="addr-label">集荷</span>' +
+      '<span class="addr-text">' + esc(pickup) + '</span>' +
+    '</div>' +
+    '<div class="addr-row">' +
+      '<span class="addr-label">配達</span>' +
+      '<span class="addr-text">' + esc(delivery) + '</span>' +
+    '</div>' +
+    (tel ? '<a href="tel:' + esc(tel) + '" class="sheet-tel">📞 ' + esc(tel) + '</a>' : '') +
+    '<div class="info-grid">' +
+      (cargo  ? '<span class="info-key">荷物</span><span class="info-val">' + esc(cargo) + '</span>' : '') +
+      (amount ? '<span class="info-key">金額</span><span class="info-val">' + esc(amount) + '</span>' : '') +
+      (memo   ? '<span class="info-key">備考</span><span class="info-val">' + esc(memo) + '</span>' : '') +
+    '</div>' +
+    '<button class="btn-open-action" ontouchend="event.preventDefault(); event.stopPropagation(); openActionPage();" onclick="openActionPage()">アクション ›</button>';
+
+  document.getElementById("sheet-content").innerHTML = html;
+  var sheet = document.getElementById("bottom-sheet");
+  sheet.classList.remove("expand");
+  sheet.classList.add("show");
+  sheetExpanded = false;
+
+  // マップ側: ピンにフォーカス（done はフォーカスなし）
+  if (googleMap) {
+    var mapPhase = getDeliveryPhase(item);
+    if (mapPhase !== "done") {
+      var key = item.type + "-" + item.id;
+      var geo = geocodeCache[key];
+      if (geo) { googleMap.setCenter({ lat: geo.lat, lng: geo.lng }); googleMap.setZoom(15); }
+    }
+    refreshMapPins();
+  }
+  // マップタブに切り替え（マップタブからのタップ以外）
+  if (currentTab === "list") {
+    // リストタブから選んだ場合はそのまま
+  }
+}
+
+// ══════════════════════════════════════
+// ステータス判定
+// ══════════════════════════════════════
+function getDeliveryPhase(item) {
+  var s = (item.data.status || "").trim();
+  if (item.type === "cr") {
+    if (s === "配達完了") return "done";
+    if (s === "集荷中")   return "picked";
+    return "new";
+  } else {
+    if (s === "完了")   return "done";
+    if (s === "集荷中") return "picked";
+    return "new";
+  }
+}
+
+// ══════════════════════════════════════
+// スワイプUI生成（2段階）
+// ══════════════════════════════════════
+function buildSwipe(phase, id, tableType) {
+  if (phase === "done") {
+    return '<div class="swipe-wrap"><div class="swipe-track done">✓ 配達完了済み</div></div>';
+  }
+  var label  = phase === "new" ? "→ スワイプして集荷完了" : "→ スワイプして配達完了";
+  var bgText = phase === "new" ? "集荷完了 ✓" : "配達完了 ✓";
+  var bgColor = phase === "new" ? "#f59e0b" : "var(--green)";
+  return '<div class="swipe-wrap" id="swipe-wrap">' +
+    '<div class="swipe-bg" style="background:' + bgColor + '">' + bgText + '</div>' +
+    '<div class="swipe-track" id="swipe-track">' + label + '</div>' +
+  '</div>';
+}
+
+function setupSwipe(id, tableType, phase) {
+  setTimeout(function() {
+    var track = document.getElementById("swipe-track");
+    if (!track) return;
+    track.addEventListener("touchstart", function(e) {
+      swipeDragStartX = e.touches[0].clientX;
+      swipeDragging   = true;
+    }, { passive: true });
+    track.addEventListener("touchmove", function(e) {
+      if (!swipeDragging) return;
+      var dx  = Math.max(0, e.touches[0].clientX - swipeDragStartX);
+      var pct = Math.min(dx / track.offsetWidth, 1);
+      track.style.transform = "translateX(" + (pct * 100) + "%)";
+      track.style.opacity   = String(1 - pct * 0.6);
+    }, { passive: true });
+    track.addEventListener("touchend", function(e) {
+      if (!swipeDragging) return;
+      swipeDragging = false;
+      var dx  = Math.max(0, e.changedTouches[0].clientX - swipeDragStartX);
+      var pct = dx / track.offsetWidth;
+      if (pct > 0.55) {
+        if (phase === "new") {
+          doPickupComplete(id, tableType);
+        } else {
+          doCompleteDelivery(id, tableType);
+        }
+      } else {
+        track.style.transform = "";
+        track.style.opacity   = "";
+      }
+    }, { passive: true });
+  }, 100);
+}
+
+// ══════════════════════════════════════
+// 集荷完了処理
+// ══════════════════════════════════════
+function doPickupComplete(id, tableType) {
+  loading(true);
+  callGas({ action: "pickupComplete", token: token, id: id, tableType: tableType }).then(function(res) {
+    loading(false);
+    if (res.ok) {
+      var item = deliveries.find(function(d) { return d.id === id && d.type === tableType; });
+      if (item) { item.data.status = "集荷中"; }
+      // ジオコードキャッシュをクリアして配達先住所で再取得
+      var cacheKey = tableType + "-" + id;
+      delete geocodeCache[cacheKey];
+      // アクションページ内スワイプを配達完了用に切り替え
+      var swipeEl = document.getElementById("action-page-swipe");
+      if (swipeEl) {
+        swipeEl.innerHTML = buildSwipe("picked", id, tableType);
+        setTimeout(function() { setupSwipe(id, tableType, "picked"); }, 0);
+      }
+      renderList();
+      if (googleMap) geocodeAll();
+    } else {
+      alert("エラー: " + (res.error || "不明"));
+      var track = document.getElementById("swipe-track");
+      if (track) { track.style.transform = ""; track.style.opacity = ""; }
+    }
+  }).catch(function(e) {
+    loading(false);
+    alert("通信エラー: " + (e && e.message ? e.message : String(e)));
+    var track = document.getElementById("swipe-track");
+    if (track) { track.style.transform = ""; track.style.opacity = ""; }
+  });
+}
+
+// ══════════════════════════════════════
+// 配達完了処理
+// ══════════════════════════════════════
+function doCompleteDelivery(id, tableType) {
+  loading(true);
+  callGas({ action: "completeDelivery", token: token, id: id, tableType: tableType }).then(function(res) {
+    loading(false);
+    if (res.ok) {
+      var item = deliveries.find(function(d) { return d.id === id && d.type === tableType; });
+      if (item) { item.done = true; item.data.status = item.type === "cr" ? "配達完了" : "完了"; }
+      closeActionPage();
+      renderList();
+      if (googleMap) refreshMapPins();
+    } else {
+      alert("エラー: " + (res.error || "不明"));
+      var track = document.getElementById("swipe-track");
+      if (track) { track.style.transform = ""; track.style.opacity = ""; }
+    }
+  }).catch(function(e) {
+    loading(false);
+    alert("通信エラー: " + (e && e.message ? e.message : String(e)));
+    var track = document.getElementById("swipe-track");
+    if (track) { track.style.transform = ""; track.style.opacity = ""; }
+  });
+}
+
+// ══════════════════════════════════════
+// ピン編集モード
+// ══════════════════════════════════════
+function togglePinEdit() {
+  // closeSheetがselectedIdxをリセットする前にアイテムを保存
+  pinEditItem = (selectedIdx >= 0) ? deliveries[selectedIdx] : null;
+  pinEditMode = true;
+  // ボトムシートをシートのみ非表示（selectedIdxはリセットしない）
+  var sheet = document.getElementById("bottom-sheet");
+  sheet.classList.remove("show", "expand");
+  sheetExpanded = false;
+  switchTab("map");
+  document.getElementById("pin-crosshair").classList.add("active");
+  // マップを現在のピン位置にフォーカス
+  if (pinEditItem) {
+    var geo = geocodeCache[pinEditItem.type + "-" + pinEditItem.id];
+    if (geo) { googleMap.setCenter({ lat: geo.lat, lng: geo.lng }); googleMap.setZoom(Math.max(googleMap.getZoom(), 16)); }
+  }
+}
+
+// ══════════════════════════════════════
+// ボトムシートドラッグ
+// ══════════════════════════════════════
+function onSheetTouchStart(e) {
+  // ボタン・リンクへのタップはドラッグを無効にする
+  var t = e.target;
+  var sheet = document.getElementById("bottom-sheet");
+  while (t && t !== sheet) {
+    if (t.tagName === "BUTTON" || t.tagName === "A" || t.tagName === "INPUT") {
+      sheetDragEnabled = false;
+      return;
+    }
+    t = t.parentElement;
+  }
+  sheetDragEnabled = true;
+  sheetDragStart = e.touches[0].clientY;
+  sheetDragScrollTop = document.getElementById("sheet-content").scrollTop;
+}
+function onSheetTouchMove(e) {
+  if (!sheetDragEnabled) return; // ボタンタップ中はスキップ
+  var dy = sheetDragStart - e.touches[0].clientY;
+  var scrollEl = document.getElementById("sheet-content");
+  // 展開中かつスクロール中は干渉しない
+  if (sheetExpanded && scrollEl.scrollTop > 0) return;
+  if (sheetExpanded && dy > 0) return;
+  e.preventDefault();
+}
+function onSheetTouchEnd(e) {
+  if (!sheetDragEnabled) { sheetDragEnabled = true; return; } // ボタンタップ後はリセット
+  var dy = sheetDragStart - e.changedTouches[0].clientY;
+  var sheet = document.getElementById("bottom-sheet");
+  if (!sheetExpanded && dy > 30) {
+    sheet.classList.add("expand"); sheetExpanded = true;
+  } else if (sheetExpanded && document.getElementById("sheet-content").scrollTop <= 0 && dy < -40) {
+    sheet.classList.remove("expand"); sheetExpanded = false;
+  } else if (!sheetExpanded && dy < -60) {
+    closeSheet();
+  }
+}
+
+// ══════════════════════════════════════
+// アクションページ（スライドイン別ページ）
+// ══════════════════════════════════════
+function openActionPage() {
+  if (selectedIdx < 0) return;
+  var item = deliveries[selectedIdx];
+  var d    = item.type === "cr" ? item.data : null;
+  var o    = item.type === "ow" ? item.data : null;
+  var title    = d ? (d.name ? d.name + " 様" : "HP配送依頼") : "ハコベル";
+  var pickup   = d ? (d.pickup_address  || "—") : (o.pickup_location  || "—");
+  var delivery = d ? (d.delivery_address|| "—") : (o.delivery_location|| "—");
+  var phase    = getDeliveryPhase(item);
+
+  document.getElementById("action-page-title").textContent = title;
+
+  // スワイプエリア
+  var swipeEl = document.getElementById("action-page-swipe");
+  swipeEl.innerHTML = buildSwipe(phase, item.id, item.type);
+  if (phase !== "done") setTimeout(function() { setupSwipe(item.id, item.type, phase); }, 0);
+
+  // マップボタン
+  var btnPickup   = document.getElementById("apage-map-pickup");
+  var btnDelivery = document.getElementById("apage-map-delivery");
+  btnPickup.onclick   = function() { openGmap(pickup); };
+  btnDelivery.onclick = function() { openGmap(delivery); };
+  btnPickup.style.opacity   = pickup   === "—" ? ".4" : "1";
+  btnDelivery.style.opacity = delivery === "—" ? ".4" : "1";
+
+  // ピン編集ボタン（selectedIdxをcloseSheet前に保存してからtoggle）
+  var capturedIdx = selectedIdx;
+  document.getElementById("apage-pin-edit").onclick = function(e) {
+    e.stopPropagation();
+    closeActionPage();
+    setTimeout(function() {
+      selectedIdx = capturedIdx; // document clickで-1になっても復元
+      togglePinEdit();
+    }, 150);
+  };
+
+  document.getElementById("action-page").classList.add("show");
+}
+
+function closeActionPage() {
+  document.getElementById("action-page").classList.remove("show");
+}
+
+// ── クロスヘア検索 ───────────────────────────────────────────
+function searchPinLocation() {
+  var q = (document.getElementById("pin-search-input").value || "").trim();
+  if (!q) return;
+  var btn = document.getElementById("pin-search-btn");
+  btn.textContent = "…"; btn.disabled = true;
+  callGas({ action: "searchAddress", token: token, query: q })
+    .then(function(res) {
+      btn.textContent = "🔍"; btn.disabled = false;
+      if (res.ok && res.lat) {
+        googleMap.setCenter({ lat: res.lat, lng: res.lng }); googleMap.setZoom(17);
+      } else {
+        alert("住所が見つかりませんでした: " + (res.formatted || q));
+      }
+    })
+    .catch(function(e) {
+      btn.textContent = "🔍"; btn.disabled = false;
+      alert("検索エラー: " + (e && e.message ? e.message : String(e)));
+    });
+}
+
+// ── クロスヘアでピン確定 ──────────────────────────────────────
+function confirmPinFromCrosshair() {
+  if (!googleMap || !pinEditItem) return;
+  var center = googleMap.getCenter();
+  geocodeCache[pinEditItem.type + "-" + pinEditItem.id] = { lat: center.lat(), lng: center.lng(), edited: true };
+  pinEditItem = null;
+  cancelPinEdit();
+  refreshMapPins();
+}
+function cancelPinEdit() {
+  pinEditMode = false;
+  document.getElementById("pin-crosshair").classList.remove("active");
+}
+
+// ── 削除ボタン ────────────────────────────────────────────────
+function deleteItem(num) {
+  if (!confirm((num) + "番の案件をリストから削除しますか？")) return;
+  var idx  = num - 1;
+  var item = deliveries[idx];
+  if (!item) return;
+  loading(true);
+  callGas({ action: "deleteItem", token: token, id: item.id, tableType: item.type })
+    .then(function(res) {
+      loading(false);
+      deliveries.splice(idx, 1);
+      // 番号を振り直す
+      deliveries.forEach(function(d, i) { d.num = i + 1; });
+      renderList();
+      if (googleMap) refreshMapPins();
+      closeSheet();
+    })
+    .catch(function(e) {
+      loading(false);
+      alert("削除エラー: " + (e && e.message ? e.message : String(e)));
+    });
+}
+
+function closeSheet() {
+  var sheet = document.getElementById("bottom-sheet");
+  sheet.classList.remove("show", "expand");
+  sheetExpanded = false;
+  selectedIdx = -1;
+  pinEditMode = false;
+  if (googleMap) refreshMapPins();
+}
+
+// ══════════════════════════════════════
+// Googleマップ起動
+// ══════════════════════════════════════
+function openGmap(address) {
+  if (!address || address === "—") { alert("住所が登録されていません"); return; }
+  var url = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(address);
+  var a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ══════════════════════════════════════
+// ユーティリティ
+// ══════════════════════════════════════
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function abbrev(s, n) { return (!s || s.length <= n) ? (s||"") : s.slice(0,n) + "…"; }
+function formatTime(iso) {
+  if (!iso) return "—";
+  var d = new Date(iso); if (isNaN(d.getTime())) return "—";
+  return ("0"+d.getHours()).slice(-2) + ":" + ("0"+d.getMinutes()).slice(-2);
+}
+function formatDateTime(iso) {
+  if (!iso) return "—";
+  var d = new Date(iso); if (isNaN(d.getTime())) return "—";
+  return (d.getMonth()+1) + "/" + d.getDate() + " " +
+    ("0"+d.getHours()).slice(-2) + ":" + ("0"+d.getMinutes()).slice(-2);
+}
+
+// Enterキーログイン
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && document.getElementById("login-screen").style.display !== "none") doLogin();
+});
+</script>
+</body>
+</html>
