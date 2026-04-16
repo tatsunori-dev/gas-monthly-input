@@ -32,7 +32,8 @@ function doPost(e) {
 
 function dispatch(action, body) {
   body = body || {};
-  if (action === "login") return actionLogin(body);
+  if (action === "login")        return actionLogin(body);
+  if (action === "getAutoToken") return actionGetAutoToken();
   if (action === "submitHPForm") return actionSubmitHPForm(body);  // 認証不要（HP公開フォーム用）
   const sess = verifySession(body.token || "");
   if (!sess.ok) return { ok: false, error: "unauthorized" };
@@ -115,13 +116,23 @@ function actionLogin(body) {
   const { username, password } = body;
   if (!APP_USERNAME || !APP_PASSWORD) return { ok: false, error: "認証設定なし" };
   if (username === APP_USERNAME && password === APP_PASSWORD) {
-    return { ok: true, token: makeSessionToken(username), username };
+    const t = makeSessionToken(username);
+    PROPS.setProperty("mgmt_auto_token", t); // サーバー側に保存（iOS ホーム画面ショートカット対応）
+    return { ok: true, token: t, username };
   }
   return { ok: false, error: "ユーザー名/パスワードが違います" };
 }
 
+function actionGetAutoToken() {
+  const t = PROPS.getProperty("mgmt_auto_token") || "";
+  if (!t) return { ok: false };
+  const check = verifySession(t);
+  if (!check.ok) { PROPS.deleteProperty("mgmt_auto_token"); return { ok: false }; }
+  return { ok: true, token: t };
+}
+
 function makeSessionToken(username) {
-  const exp = Date.now() + 8 * 60 * 60 * 1000;
+  const exp = Date.now() + 24 * 60 * 60 * 1000; // 24時間（旧: 8時間）
   const payload = username + "|" + exp;
   const sig = Utilities.computeHmacSha256Signature(payload, SESSION_SECRET)
     .map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, "0")).join("");
@@ -583,6 +594,7 @@ function actionAcceptMessage(body) {
   row.form_type = "delivery";
   row.status    = row.status || "new";
   row.is_read   = true;
+  row.name      = row.name  || "(未記入)";
   row.note      = ("[LINE経由] " + (row.note || "")).trim();
   const inserted = sbInsert(TBL, row);
 
