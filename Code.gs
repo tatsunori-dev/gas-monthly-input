@@ -3,7 +3,7 @@
 // ============================================================
 const PROPS = PropertiesService.getScriptProperties();
 const SUPABASE_URL = PROPS.getProperty("SUPABASE_URL") || "";
-const SUPABASE_ANON_KEY = PROPS.getProperty("SUPABASE_ANON_KEY") || "";
+const SUPABASE_SERVICE_KEY = PROPS.getProperty("SUPABASE_SERVICE_ROLE_KEY") || "";
 const APP_USERNAME = PROPS.getProperty("APP_USERNAME") || "";
 const APP_PASSWORD = PROPS.getProperty("APP_PASSWORD") || "";
 const SESSION_SECRET = PROPS.getProperty("SESSION_SECRET") || "change-me-please";
@@ -34,6 +34,7 @@ function doPost(e) {
 function dispatch(action, body) {
   body = body || {};
   if (action === "login") return actionLogin(body);
+  if (action === "getAutoToken") return actionGetAutoToken();
   const sess = verifySession(body.token || "");
   if (!sess.ok) return { ok: false, error: "unauthorized" };
   try {
@@ -54,13 +55,23 @@ function actionLogin(body) {
   const { username, password } = body;
   if (!APP_USERNAME || !APP_PASSWORD) return { ok: false, error: "認証設定なし" };
   if (username === APP_USERNAME && password === APP_PASSWORD) {
-    return { ok: true, token: makeSessionToken(username), username };
+    const t = makeSessionToken(username);
+    PROPS.setProperty("auto_token", t);
+    return { ok: true, token: t, username };
   }
   return { ok: false, error: "ユーザー名/パスワードが違います" };
 }
 
+function actionGetAutoToken() {
+  const t = PROPS.getProperty("auto_token") || "";
+  if (!t) return { ok: false };
+  const check = verifySession(t);
+  if (!check.ok) { PROPS.deleteProperty("auto_token"); return { ok: false }; }
+  return { ok: true, token: t, username: check.username };
+}
+
 function makeSessionToken(username) {
-  const exp = Date.now() + 8 * 60 * 60 * 1000;
+  const exp = Date.now() + 12 * 60 * 60 * 1000;
   const payload = username + "|" + exp;
   const sig = Utilities.computeHmacSha256Signature(payload, SESSION_SECRET)
     .map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, "0")).join("");
@@ -83,7 +94,7 @@ function verifySession(token) {
 }
 
 function sbHeaders(extra) {
-  return { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer " + SUPABASE_ANON_KEY, ...extra };
+  return { "Content-Type": "application/json", "apikey": SUPABASE_SERVICE_KEY, "Authorization": "Bearer " + SUPABASE_SERVICE_KEY, ...extra };
 }
 function sbGet(path, params) {
   let url = SUPABASE_URL + "/rest/v1/" + path;
@@ -361,15 +372,20 @@ function buildMonthReportFull(rows, monthStr) {
   );
 
   const withH=tmp.filter(r=>toNum(r["合計h"])>0).map(r=>({...r,_sales:toNum(r["合計売上"]),_h:toNum(r["合計h"]),_hourly:toNum(r["合計売上"])/toNum(r["合計h"])}));
-  const top5=[...withH].sort((a,b)=>b._hourly-a._hourly).slice(0,5);
-  const worst5=[...withH].sort((a,b)=>a._hourly-b._hourly).slice(0,5);
-  function fmtRow(r){return `${r["日付"]}: ${fmtComma(r._hourly)} 円（${fmtComma(r._sales)}/${r._h}h）`;}
+  const isSummer = season === "夏";
+  const top5  = [...withH].sort((a,b) => isSummer ? b._sales-a._sales   : b._hourly-a._hourly).slice(0,5);
+  const worst5= [...withH].sort((a,b) => isSummer ? a._sales-b._sales   : a._hourly-b._hourly).slice(0,5);
+  function fmtRow(r){ return isSummer
+    ? `${r["日付"]}: ${fmtComma(r._sales)} 円（${fmtComma(r._hourly)}/${r._h}h）`
+    : `${r["日付"]}: ${fmtComma(r._hourly)} 円（${fmtComma(r._sales)}/${r._h}h）`; }
   function fmtBD(r){
     const parts=CLIENT_COLS.map(c=>[c,toNum(r[c])]).filter(([,v])=>v!==0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} ${fmtComma(v)}`);
     return `${r["日付"]}  売上:${fmtComma(r._sales)}  時間:${r._h}h  時給:${fmtComma(r._hourly)}円\n  内訳: ${parts.length?parts.join(" / "):"（内訳なし）"}`;
   }
-  lines.push("","【全体時給 TOP5（当月・日次）】");top5.length?top5.forEach((r,i)=>lines.push(`${i+1}. ${fmtRow(r)}`)):lines.push("データなし");
-  lines.push("","【全体時給 WORST5（当月・日次）】");worst5.length?worst5.forEach((r,i)=>lines.push(`${i+1}. ${fmtRow(r)}`)):lines.push("データなし");
+  const top5Label   = isSummer ? "日次売上 TOP5"   : "全体時給 TOP5";
+  const worst5Label = isSummer ? "日次売上 WORST5" : "全体時給 WORST5";
+  lines.push("",`【${top5Label}（当月・日次）】`);top5.length?top5.forEach((r,i)=>lines.push(`${i+1}. ${fmtRow(r)}`)):lines.push("データなし");
+  lines.push("",`【${worst5Label}（当月・日次）】`);worst5.length?worst5.forEach((r,i)=>lines.push(`${i+1}. ${fmtRow(r)}`)):lines.push("データなし");
   lines.push("","【TOP5内訳（当月・日次）】");top5.length?top5.forEach((r,i)=>{lines.push(`[TOP${i+1}]`);lines.push(fmtBD(r));}):lines.push("データなし");
   lines.push("","【WORST5内訳（当月・日次）】");worst5.length?worst5.forEach((r,i)=>{lines.push(`[WORST${i+1}]`);lines.push(fmtBD(r));}):lines.push("データなし");
   return lines.join("\n");
