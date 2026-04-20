@@ -57,6 +57,7 @@ function dispatch(action, body) {
     case "deleteRecord":    return actionDeleteRecord(body);
     case "broadcastLine":   return actionBroadcastLine(body);
     case "updateNote":          return actionUpdateNote(body);
+    case "updateRecord":        return actionUpdateRecord(body);
     case "updateLineMessage":   return actionUpdateLineMessage(body);
     case "insertOtherWork":         return actionInsertOtherWork(body);
     case "loadOtherWorks":          return actionLoadOtherWorks(body);
@@ -641,6 +642,20 @@ function actionDeleteRecord(body) {
     muteHttpExceptions: true
   });
   if (res.getResponseCode() >= 400) throw new Error("削除失敗: " + res.getContentText());
+  return { ok: true };
+}
+
+function actionUpdateRecord(body) {
+  const id = body.id;
+  if (!id) throw new Error("IDがありません");
+  const updates = body.updates || {};
+  const allowed = ["name", "tel", "pickup_address", "delivery_address", "cargo_info", "desired_datetime", "amount", "memo", "note"];
+  const data = {};
+  allowed.forEach(function(key) {
+    if (updates[key] !== undefined) data[key] = updates[key];
+  });
+  if (Object.keys(data).length === 0) throw new Error("更新フィールドがありません");
+  sbPatch(TBL, "id=eq." + id, data);
   return { ok: true };
 }
 
