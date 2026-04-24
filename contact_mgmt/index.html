@@ -984,6 +984,11 @@ function fmtDt(v) {
   try { return new Date(v).toLocaleString("ja-JP", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}); }
   catch(e) { return v; }
 }
+function fmtDate(v) {
+  if (!v) return "";
+  try { return new Date(v).toLocaleDateString("ja-JP", {month:"2-digit",day:"2-digit"}); }
+  catch(e) { return ""; }
+}
 
 function fieldVal(v, label) {
   if (v == null || v === "" || v === false) {
@@ -1306,7 +1311,7 @@ function buildDeliveryCard(rec) {
 
   return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-${id}">
     <div class="acc-header" onclick="toggleAcc('${id}')">
-      <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")} 様 　📅 ${fmtDt(rec.desired_datetime)}</div>
+      <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")}　📅 ${fmtDt(rec.desired_datetime)}</div>
       <span class="acc-arrow">▼</span>
     </div>
     <div class="acc-body">
@@ -1460,7 +1465,7 @@ function buildInquiryCard(rec) {
 
   return `<div class="accordion${!rec.is_read?' unread':''}" id="acc-i-${id}">
     <div class="acc-header" onclick="toggleAcc('i-${id}')">
-      <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")} 様 　📌 ${escHtml(rec.inquiry_type||"一般")}</div>
+      <div class="acc-title">${unreadBadge}${statusIcon} [${escHtml(rec.status||"新規")}] ${escHtml(rec.name||"（名前なし）")}　📌 ${escHtml(rec.inquiry_type||"一般")}</div>
       <span class="acc-arrow">▼</span>
     </div>
     <div class="acc-body">
@@ -1561,10 +1566,14 @@ function buildBoardCard(rec) {
   const delivery = rec.delivery_address || "";
   const priceM   = (rec.note || '').match(/\[¥(\d+)\]/);
   const autoAmount = rec.amount != null ? String(rec.amount) : (priceM ? priceM[1] : '');
+  // time_rangeがある場合は「04/22 17:45-18:15」形式、ない場合は従来の日時表示
+  const dispDatetime = rec.time_range
+    ? (rec.desired_datetime ? fmtDate(rec.desired_datetime) + " " + rec.time_range : rec.time_range)
+    : fmtDt(rec.desired_datetime);
 
   return `<div class="accordion" id="acc-b-${id}">
     <div class="acc-header" onclick="toggleAcc('b-${id}')">
-      <div class="acc-title">🚚 ${escHtml(rec.name||"（名前なし）")} 様 　📅 ${fmtDt(rec.desired_datetime)}</div>
+      <div class="acc-title">🚚 ${escHtml(rec.name||"（名前なし）")}　📅 ${dispDatetime}</div>
       <span class="acc-arrow">▼</span>
     </div>
     <div class="acc-body">
@@ -1572,7 +1581,7 @@ function buildBoardCard(rec) {
         <div>
           ${fieldRow("依頼者", rec.name)}
           ${rec.tel ? `<div class="field-row"><span class="field-label">電話番号</span><a href="tel:${escHtml(rec.tel)}" style="color:var(--red);font-weight:700;">${escHtml(rec.tel)}</a></div>` : fieldRow("電話番号","")}
-          ${fieldRow("希望日時", fmtDt(rec.desired_datetime))}
+          ${fieldRow("希望日時", dispDatetime)}
           ${fieldRow("荷物", rec.cargo_info)}
           ${fieldRow("支払い", rec.payment_method)}
           <hr class="section-sep">
@@ -1806,7 +1815,7 @@ function buildArchivedInquiryCard(rec) {
   const id = rec.id;
   return `<div class="accordion" id="acc-arc-${id}">
     <div class="acc-header" onclick="toggleAcc('arc-${id}')">
-      <div class="acc-title">📦 [${escHtml(rec.status||"完了")}] ${escHtml(rec.name||"（名前なし）")} 様 　📌 ${escHtml(rec.inquiry_type||"一般")}</div>
+      <div class="acc-title">📦 [${escHtml(rec.status||"完了")}] ${escHtml(rec.name||"（名前なし）")}　📌 ${escHtml(rec.inquiry_type||"一般")}</div>
       <span class="acc-arrow">▼</span>
     </div>
     <div class="acc-body">
@@ -2151,6 +2160,65 @@ async function loadMessages() {
   finally { loading(false); }
 }
 
+// LINE受付フォーム用: "4/10" "4月10日" → "YYYY-MM-DD"（type="date"用）
+function lineDateToInputVal(dateStr) {
+  if (!dateStr) return "";
+  const ymMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (ymMatch) return dateStr;
+  const mdMatch = dateStr.match(/(\d{1,2})[\/月](\d{1,2})/);
+  if (mdMatch) {
+    const y = new Date().getFullYear();
+    return `${y}-${String(parseInt(mdMatch[1])).padStart(2,"0")}-${String(parseInt(mdMatch[2])).padStart(2,"0")}`;
+  }
+  return "";
+}
+
+// しょんぴぃ枠: A=11-13(廃止) B=13-15 C=15-17 D=17-19 E=19-21
+const SHOMP_SLOTS = {A:{s:"11:00",e:"13:00"},B:{s:"13:00",e:"15:00"},C:{s:"15:00",e:"17:00"},D:{s:"17:00",e:"19:00"},E:{s:"19:00",e:"21:00"}};
+
+// "D枠" → "D枠 17:00-19:00" に変換（表示用）
+function formatTimeDisplay(timeStr) {
+  if (!timeStr) return timeStr;
+  const slotM = timeStr.match(/^([A-Ea-e])枠?$/i);
+  if (slotM) {
+    const slot = SHOMP_SLOTS[slotM[1].toUpperCase()];
+    if (slot) return slotM[1].toUpperCase() + '枠 ' + slot.s + '-' + slot.e;
+  }
+  return timeStr;
+}
+
+// "B枠" "14時〜16時" "13:00-15:00" → 開始時刻 "HH:MM"
+function lineTimeToInputVal(timeStr) {
+  if (!timeStr) return "";
+  const slotM = timeStr.match(/^([A-Ea-e])枠?$/i);
+  if (slotM) return SHOMP_SLOTS[slotM[1].toUpperCase()]?.s || "";
+  // "HH:MM-HH:MM" 保存済み範囲 → 開始を返す
+  const rangeM = timeStr.match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+  if (rangeM) return rangeM[1];
+  const hhmmM = timeStr.match(/^(\d{2}):(\d{2})$/);
+  if (hhmmM) return timeStr;
+  // "14時〜" "14:30〜" "14時30分〜" → 先頭の時刻（分まで取得）
+  const hM = timeStr.match(/^(\d{1,2})[時:](\d{2})?/);
+  if (hM) return `${String(parseInt(hM[1])).padStart(2,"0")}:${hM[2] || "00"}`;
+  const hStart = timeStr.match(/^(\d{1,2})\s*[-〜ー]/);
+  if (hStart) return `${String(parseInt(hStart[1])).padStart(2,"0")}:00`;
+  return "";
+}
+
+// "B枠" "14時〜16時" "13:00-15:00" → 終了時刻 "HH:MM"
+function lineTimeToEndVal(timeStr) {
+  if (!timeStr) return "";
+  const slotM = timeStr.match(/^([A-Ea-e])枠?$/i);
+  if (slotM) return SHOMP_SLOTS[slotM[1].toUpperCase()]?.e || "";
+  // "HH:MM-HH:MM" 保存済み範囲 → 終了を返す
+  const rangeM = timeStr.match(/^(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+  if (rangeM) return rangeM[2];
+  // "〜16時" or "〜16:00" → 末尾の時刻
+  const eM = timeStr.match(/[〜~](\d{1,2})[時:]?(\d{2})?/);
+  if (eM) return `${String(parseInt(eM[1])).padStart(2,"0")}:${eM[2] || "00"}`;
+  return "";
+}
+
 function parseLineSummary(content) {
   const lines = (content || "").split("\n").map(l => l.trim()).filter(Boolean);
   const result = { name: "", date: "", time: "", pickup: "", delivery: "", cargo: "", tel: "" };
@@ -2158,8 +2226,8 @@ function parseLineSummary(content) {
     const item = line.replace(/^●/, "").trim();
     if (/^@/.test(item)) continue;
     if (/^[0-9０-９]{1,2}[\/月][0-9０-９]{1,2}/.test(item)) { result.date = item; continue; }
-    if (/[A-Da-d]枠|[0-9]{1,2}時.*[〜~]|[0-9]{1,2}:\d{2}\s*[〜~]|[0-9]{1,2}\s*[-〜ー]\s*[0-9]{1,2}(?![月\/\d])/.test(item)) { result.time = item; continue; }
-    if (/.+(様|さま|さん)$/.test(item) && !/\d/.test(item)) { result.name = item; continue; }
+    if (/^[A-Ea-e]枠?$|[A-Ea-e]枠|[0-9]{1,2}時.*[〜~]|[0-9]{1,2}:\d{2}\s*[〜~]|^[0-9]{1,2}\s*[-〜ー]\s*[0-9]{1,2}(?![月\/\d])/.test(item)) { result.time = item; continue; }
+    if (/.+(様|さま|さん)$/.test(item) && !/\d/.test(item)) { result.name = item.replace(/(様|さま|さん)$/, "").trim(); continue; }
     if (/^0\d{9,10}$/.test(item.replace(/[\s\-]/g,""))) { result.tel = item; continue; }
     if (/ピック|集荷/.test(item)) { result.pickup = item; continue; }
     if (/\d号(?:サイズ|ケーキ)?$|\d号サイズ|[SML]サイズ/.test(item) && item.length < 20) { result.cargo = item; continue; }
@@ -2173,18 +2241,15 @@ function parseLineSummary(content) {
 function checkConflicts(dateStr, timeStr) {
   if (!dateStr || !lineConfirmed.length) return [];
   const year = new Date().getFullYear();
-  const dm = dateStr.match(/(\d{1,2})[\/月](\d{1,2})/);
-  if (!dm) return [];
-  const month = parseInt(dm[1]), day = parseInt(dm[2]);
-  let hour = 0;
-  const tm = timeStr && timeStr.match(/([A-Da-d])枠/i);
-  const slots = {A:9,B:12,C:15,D:17};
-  if (tm) hour = slots[tm[1].toUpperCase()] || 0;
-  else {
-    const hm = timeStr && (timeStr.match(/(\d{1,2})時/) || timeStr.match(/^(\d{1,2})\s*[-〜ー]/));
-    if (hm) hour = parseInt(hm[1]);
-  }
-  const newDt = new Date(year, month-1, day, hour);
+  const ymM = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const mdM = !ymM && dateStr.match(/(\d{1,2})[\/月](\d{1,2})/);
+  if (!ymM && !mdM) return [];
+  const month = ymM ? parseInt(ymM[2]) : parseInt(mdM[1]);
+  const day   = ymM ? parseInt(ymM[3]) : parseInt(mdM[2]);
+  const dy    = ymM ? parseInt(ymM[1]) : year;
+  const hhmm  = lineTimeToInputVal(timeStr || "") || "00:00";
+  const hour  = parseInt(hhmm.split(":")[0]);
+  const newDt = new Date(dy, month-1, day, hour);
   return lineConfirmed.filter(c => {
     if (!c.desired_datetime) return false;
     const ex = new Date(c.desired_datetime);
@@ -2216,7 +2281,7 @@ function buildMessageCard(msg) {
   const conflicts = checkConflicts(useDate, useTime);
 
   const conflictHtml = conflicts.length
-    ? '<div class="alert alert-warn" style="margin:8px 0;font-size:.8rem;">⚠️ 近い案件あり: ' + conflicts.map(function(c){ return escHtml(c.name||"不明") + " 様"; }).join(", ") + '</div>'
+    ? '<div class="alert alert-warn" style="margin:8px 0;font-size:.8rem;">⚠️ 近い案件あり: ' + conflicts.map(function(c){ return escHtml(c.name||"不明"); }).join(", ") + '</div>'
     : '<div class="alert alert-success" style="margin:8px 0;font-size:.78rem;padding:6px 10px;">✅ スケジュール重複なし</div>';
 
   var fr = function(label, manualVal, parsedVal) {
@@ -2226,7 +2291,7 @@ function buildMessageCard(msg) {
   const summaryHtml = [
     fr("氏名",  mv.name,     p.name),
     fr("日付",  mv.date,     p.date),
-    fr("時間",  mv.time,     p.time),
+    fr("時間",  mv.time && formatTimeDisplay(mv.time),  p.time && formatTimeDisplay(p.time)),
     fr("集荷",  mv.pickup,   p.pickup),
     fr("配達先",mv.delivery, p.delivery),
     fr("荷物",  mv.cargo,    p.cargo),
@@ -2283,20 +2348,29 @@ async function acceptMsg(id) {
   const useDate     = mv.date     || p.date;
   const useTime     = mv.time     || p.time;
   const year = new Date().getFullYear();
-  const dm = useDate && useDate.match(/(\d{1,2})[\/月](\d{1,2})/);
-  const slots = {A:"09:00",B:"12:00",C:"15:00",D:"17:00"};
   let desired_datetime = null;
-  if (dm) {
-    const tm = useTime && useTime.match(/([A-Da-d])枠/i);
-    const hm = !tm && useTime && (useTime.match(/(\d{1,2})時/) || useTime.match(/^(\d{1,2})\s*[-〜ー]/));
-    const hhmm = tm ? slots[tm[1].toUpperCase()] : (hm ? `${parseInt(hm[1]).toString().padStart(2,"0")}:00` : "00:00");
-    desired_datetime = new Date(year, parseInt(dm[1])-1, parseInt(dm[2]),
-      parseInt(hhmm.split(":")[0]), parseInt(hhmm.split(":")[1])).toISOString();
+  if (useDate) {
+    // YYYY-MM-DD形式（ネイティブpicker）とM/D形式（テキスト）の両方を処理
+    const ymM = useDate.match(/(\d{4})-(\d{2})-(\d{2})/);
+    const mdM = !ymM && useDate.match(/(\d{1,2})[\/月](\d{1,2})/);
+    const dateMonth = ymM ? parseInt(ymM[2]) : (mdM ? parseInt(mdM[1]) : null);
+    const dateDay   = ymM ? parseInt(ymM[3]) : (mdM ? parseInt(mdM[2]) : null);
+    const dateYear  = ymM ? parseInt(ymM[1]) : year;
+    if (dateMonth && dateDay) {
+      // HH:MM形式（ネイティブpicker）・枠・"14時〜"テキストの全パターンを処理
+      const hhmm = lineTimeToInputVal(useTime || "") || "00:00";
+      desired_datetime = new Date(dateYear, dateMonth-1, dateDay,
+        parseInt(hhmm.split(":")[0]), parseInt(hhmm.split(":")[1])).toISOString();
+    }
   }
   const priceNote = p.price ? "[¥" + p.price + "]" : null;
   var amountInput = document.getElementById("line-amount-" + id);
   var amountVal = amountInput ? parseInt(amountInput.value, 10) : NaN;
   var amountToSend = !isNaN(amountVal) && amountVal > 0 ? amountVal : (p.price || null);
+  // time_range: "HH:MM-HH:MM" 形式で開始〜終了を保存
+  const startT = lineTimeToInputVal(useTime || "");
+  const endT   = lineTimeToEndVal(useTime || "");
+  const timeRange = startT && endT ? startT + "-" + endT : (startT || null);
   const row = {
     name:             useName,
     tel:              useTel,
@@ -2304,6 +2378,7 @@ async function acceptMsg(id) {
     delivery_address: useDelivery,
     cargo_info:       useCargo,
     desired_datetime: desired_datetime,
+    time_range:       timeRange,
     contact_method:   "LINE",
     note:             priceNote,
     status:           "確定",
@@ -2379,8 +2454,9 @@ function showLineEditForm(id) {
     +   mkInp('tel',      '電話番号',               mv.tel      || p.tel,      'tel')
     +   mkInp('pickup',   '集荷先',                 mv.pickup   || "しょんぴぃケーキ　澄川")
     +   mkInp('delivery', '配達先',                 mv.delivery || p.delivery)
-    +   mkInp('date',     '希望日付（例: 4/10）',    mv.date     || p.date)
-    +   mkInp('time',     '希望時間（例: 14時〜）',  mv.time     || p.time)
+    +   mkInp('date',       '希望日付',        lineDateToInputVal(mv.date || p.date), 'date')
+    +   mkInp('time-start', '希望時刻（開始）', lineTimeToInputVal(mv.time || p.time), 'time')
+    +   mkInp('time-end',   '希望時刻（終了）', lineTimeToEndVal(mv.time || p.time),   'time')
     +   mkInp('cargo',    '荷物情報',               mv.cargo    || p.cargo)
     +   mkInp('amount',   '金額（円）',              curAmount,                 'number')
     +   '<div id="le-result-' + id + '" style="margin-bottom:8px;"></div>'
@@ -2414,13 +2490,20 @@ async function saveLineEditForm(id) {
         if (m.id !== id) return m;
         var updated = Object.assign({}, m);
         if (amountParsed !== null && !isNaN(amountParsed)) updated.amount = amountParsed;
+        // date: "YYYY-MM-DD" → "M/D"（年を除去して表示をコンパクトに）
+        var rawDate = gv("date");
+        var dateForManual = rawDate ? rawDate.replace(/^\d{4}-0*(\d+)-0*(\d+)$/, "$1/$2") : "";
+        // time: 開始と終了を "HH:MM-HH:MM" で合成
+        var tStart = gv("time-start");
+        var tEnd   = gv("time-end");
+        var timeForManual = tStart && tEnd ? tStart + "-" + tEnd : tStart;
         updated._manual = {
           name:     gv("name"),
           tel:      gv("tel"),
           pickup:   gv("pickup"),
           delivery: gv("delivery"),
-          date:     gv("date"),
-          time:     gv("time"),
+          date:     dateForManual,
+          time:     timeForManual,
           cargo:    gv("cargo"),
         };
         return updated;
@@ -2544,22 +2627,24 @@ function showBoardEditForm(id) {
   if (!area) return;
   if (area.style.display === "block") { area.style.display = "none"; return; }
   const dt = rec.desired_datetime ? new Date(rec.desired_datetime) : null;
-  const dateVal = dt ? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}` : "";
-  const timeVal = dt ? `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}` : "";
-  const curAmount = rec.amount != null ? String(rec.amount) : "";
+  const dateVal    = dt ? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}` : "";
+  const timeStart  = dt ? `${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}` : "";
+  const timeEnd    = rec.time_range ? lineTimeToEndVal(rec.time_range) : "";
+  const curAmount  = rec.amount != null ? String(rec.amount) : "";
   function mkI(key, label, val, type) {
     return `<div class="form-group" style="margin-bottom:8px;"><label style="font-size:.78rem;color:var(--text2);">${label}</label>`
       + `<input id="be-${key}-${id}" type="${type||'text'}" value="${escHtml(val||'')}" style="font-size:.85rem;"></div>`;
   }
   area.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:10px;">`
     + `<div style="font-size:.75rem;color:var(--text2);margin-bottom:10px;">案件情報を直接編集できます。</div>`
-    + mkI('name',     '氏名',              rec.name)
-    + mkI('date',     '希望日付 (YYYY-MM-DD)', dateVal)
-    + mkI('time',     '希望時刻 (HH:MM)',   timeVal)
-    + mkI('pickup',   '集荷先',            rec.pickup_address)
-    + mkI('delivery', '配達先',            rec.delivery_address)
-    + mkI('cargo',    '荷物内容',          rec.cargo_info)
-    + mkI('amount',   '金額（円）',        curAmount, 'number')
+    + mkI('name',       '氏名',              rec.name)
+    + mkI('date',       '希望日付', dateVal, 'date')
+    + mkI('time-start', '時刻（開始）', timeStart, 'time')
+    + mkI('time-end',   '時刻（終了）', timeEnd,   'time')
+    + mkI('pickup',     '集荷先',            rec.pickup_address)
+    + mkI('delivery',   '配達先',            rec.delivery_address)
+    + mkI('cargo',      '荷物内容',          rec.cargo_info)
+    + mkI('amount',     '金額（円）',        curAmount, 'number')
     + `<div style="display:flex;gap:8px;margin-top:8px;">`
     + `<button class="btn btn-primary btn-sm" onclick="saveBoardEdit(${id})">💾 保存</button>`
     + `<button class="btn btn-secondary btn-sm" onclick="document.getElementById('board-edit-area-${id}').style.display='none'">✕ キャンセル</button>`
@@ -2570,13 +2655,15 @@ function showBoardEditForm(id) {
 async function saveBoardEdit(id) {
   const rec = confirmedRows.find(r => r.id === id);
   if (!rec) return;
-  const dateVal = document.getElementById("be-date-"+id).value.trim();
-  const timeVal = document.getElementById("be-time-"+id).value.trim();
+  const dateVal  = document.getElementById("be-date-"+id).value.trim();
+  const tStart   = document.getElementById("be-time-start-"+id).value.trim();
+  const tEnd     = document.getElementById("be-time-end-"+id).value.trim();
   let desired_datetime = rec.desired_datetime;
   if (dateVal) {
-    const d = new Date(`${dateVal}T${timeVal || "00:00"}:00+09:00`);
+    const d = new Date(`${dateVal}T${tStart || "00:00"}:00+09:00`);
     if (!isNaN(d)) desired_datetime = d.toISOString();
   }
+  const timeRange = tStart && tEnd ? tStart + "-" + tEnd : (tStart || null);
   const amountRaw = document.getElementById("be-amount-"+id).value;
   const amountVal = amountRaw !== "" ? parseInt(amountRaw, 10) : null;
   const updates = {
@@ -2585,6 +2672,7 @@ async function saveBoardEdit(id) {
     delivery_address: document.getElementById("be-delivery-"+id).value.trim() || null,
     cargo_info:       document.getElementById("be-cargo-"+id).value.trim() || null,
     desired_datetime: desired_datetime,
+    time_range:       timeRange,
     amount:           !isNaN(amountVal) && amountVal != null ? amountVal : null,
   };
   loading(true);

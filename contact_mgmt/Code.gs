@@ -649,7 +649,7 @@ function actionUpdateRecord(body) {
   const id = body.id;
   if (!id) throw new Error("IDがありません");
   const updates = body.updates || {};
-  const allowed = ["name", "tel", "pickup_address", "delivery_address", "cargo_info", "desired_datetime", "amount", "memo", "note"];
+  const allowed = ["name", "tel", "pickup_address", "delivery_address", "cargo_info", "desired_datetime", "time_range", "amount", "memo", "note"];
   const data = {};
   allowed.forEach(function(key) {
     if (updates[key] !== undefined) data[key] = updates[key];
